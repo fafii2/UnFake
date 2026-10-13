@@ -1,4 +1,4 @@
-/* ── UnFake Content Script Styles ─────────────────────────────────
+/* ── UnFake Content Script Styles (White & Navy Blue) ─────────────
  *
  * All classes are prefixed with "unfake-" to avoid collisions
  * with styles on the host webpage.
@@ -9,8 +9,8 @@
 .unfake-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(3px);
+  background: rgba(10, 25, 47, 0.45);
+  backdrop-filter: blur(4px);
   z-index: 2147483645;
   opacity: 0;
   transition: opacity 0.25s ease;
@@ -26,20 +26,20 @@
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) scale(0.95);
-  width: 480px;
+  transform: translate(-50%, -50%) scale(0.96);
+  width: 490px;
   max-width: calc(100vw - 32px);
   max-height: calc(100vh - 64px);
   overflow-y: auto;
-  background: #1a1a2e;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
   border-radius: 16px;
   box-shadow:
-    0 24px 48px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    0 20px 40px -10px rgba(10, 25, 47, 0.25),
+    0 0 0 1px rgba(10, 25, 47, 0.05);
   z-index: 2147483646;
-  color: #e0e0e0;
-  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #0f172a;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
   font-size: 14px;
   line-height: 1.5;
   opacity: 0;
@@ -58,7 +58,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .unfake-logo-row {
@@ -68,20 +69,23 @@
 }
 
 .unfake-logo-icon {
-  font-size: 20px;
+  font-size: 19px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .unfake-logo-text {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
-  color: #ffffff;
+  color: #0a192f;
   letter-spacing: -0.3px;
 }
 
 .unfake-close-btn {
-  background: rgba(255, 255, 255, 0.06);
+  background: #f1f5f9;
   border: none;
-  color: #888;
+  color: #475569;
   font-size: 20px;
   width: 32px;
   height: 32px;
@@ -94,28 +98,29 @@
 }
 
 .unfake-close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: #e2e8f0;
+  color: #0a192f;
 }
 
 /* ── Modal Body ──────────────────────────────────────────────────── */
 
 .unfake-modal-body {
   padding: 20px;
+  background: #ffffff;
 }
 
 /* ── Loading State ───────────────────────────────────────────────── */
 
 .unfake-loading {
   text-align: center;
-  padding: 32px 0;
+  padding: 36px 0;
 }
 
 .unfake-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(99, 102, 241, 0.15);
-  border-top-color: #6366f1;
+  width: 42px;
+  height: 42px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #1e3a8a;
   border-radius: 50%;
   margin: 0 auto 16px;
   animation: unfake-spin 0.8s linear infinite;
@@ -126,13 +131,14 @@
 }
 
 .unfake-loading-text {
-  color: #b0b0c8;
+  color: #0a192f;
   font-size: 14px;
+  font-weight: 600;
   margin-bottom: 8px;
 }
 
 .unfake-claim-preview {
-  color: #6b6b8d;
+  color: #475569;
   font-size: 12px;
   font-style: italic;
   max-width: 360px;
@@ -149,41 +155,41 @@
 
 .unfake-verdict-badge {
   display: inline-block;
-  padding: 8px 20px;
+  padding: 8px 22px;
   border-radius: 24px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.3px;
 }
 
 .unfake-verdict-supported {
-  background: rgba(74, 222, 128, 0.12);
-  color: #4ade80;
-  border: 1px solid rgba(74, 222, 128, 0.2);
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
 }
 
 .unfake-verdict-contradicted {
-  background: rgba(248, 113, 113, 0.12);
-  color: #f87171;
-  border: 1px solid rgba(248, 113, 113, 0.2);
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
 }
 
 .unfake-verdict-mixed {
-  background: rgba(251, 191, 36, 0.12);
-  color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
 }
 
 .unfake-verdict-insufficient {
-  background: rgba(147, 147, 180, 0.1);
-  color: #9393b4;
-  border: 1px solid rgba(147, 147, 180, 0.15);
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
 }
 
 .unfake-verdict-error {
-  background: rgba(248, 113, 113, 0.08);
-  color: #f87171;
-  border: 1px solid rgba(248, 113, 113, 0.15);
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
 }
 
 /* ── Explanation ─────────────────────────────────────────────────── */
@@ -193,8 +199,8 @@
 }
 
 .unfake-explanation p {
-  color: #c0c0d8;
-  font-size: 13px;
+  color: #1e293b;
+  font-size: 13.5px;
   line-height: 1.65;
 }
 
@@ -202,16 +208,18 @@
 
 .unfake-triage-info {
   font-size: 12px;
-  color: #7a7a9a;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.03);
+  color: #475569;
+  padding: 9px 12px;
+  background: #f8fafc;
   border-radius: 8px;
+  border: 1px solid #e2e8f0;
   margin-bottom: 16px;
 }
 
 .unfake-triage-label {
-  font-weight: 600;
-  color: #9393b4;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-right: 4px;
 }
 
 /* ── Original Claim ──────────────────────────────────────────────── */
@@ -222,21 +230,21 @@
 
 .unfake-claim-title {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: #6b6b8d;
+  color: #1e3a8a;
   margin-bottom: 8px;
 }
 
 .unfake-claim-text {
   margin: 0;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border-left: 3px solid rgba(99, 102, 241, 0.4);
+  background: #f8fafc;
+  border-left: 3px solid #1e3a8a;
   border-radius: 0 8px 8px 0;
   font-size: 13px;
-  color: #b0b0c8;
+  color: #1e293b;
   font-style: italic;
   word-break: break-word;
 }
@@ -249,24 +257,25 @@
 
 .unfake-evidence-title {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: #6b6b8d;
+  color: #1e3a8a;
   margin-bottom: 10px;
 }
 
 .unfake-evidence-item {
   padding: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
   margin-bottom: 8px;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .unfake-evidence-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: #f1f5f9;
+  border-color: #cbd5e1;
 }
 
 .unfake-evidence-header {
@@ -278,7 +287,7 @@
 }
 
 .unfake-evidence-link {
-  color: #818cf8;
+  color: #1e40af;
   text-decoration: none;
   font-size: 13px;
   font-weight: 600;
@@ -287,13 +296,13 @@
 
 .unfake-evidence-link:hover {
   text-decoration: underline;
-  color: #a5b4fc;
+  color: #1d4ed8;
 }
 
 .unfake-evidence-badge {
   flex-shrink: 0;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: 2px 8px;
@@ -301,23 +310,26 @@
 }
 
 .unfake-badge-supporting {
-  background: rgba(74, 222, 128, 0.1);
-  color: #4ade80;
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
 }
 
 .unfake-badge-contradicting {
-  background: rgba(248, 113, 113, 0.1);
-  color: #f87171;
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
 }
 
 .unfake-badge-contextual {
-  background: rgba(147, 147, 180, 0.1);
-  color: #9393b4;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
 }
 
 .unfake-evidence-snippet {
   font-size: 12px;
-  color: #9898b0;
+  color: #334155;
   line-height: 1.5;
   margin-bottom: 6px;
 }
@@ -326,12 +338,14 @@
   display: flex;
   gap: 6px;
   font-size: 11px;
-  color: #6b6b8d;
+  color: #64748b;
   flex-wrap: wrap;
 }
 
 .unfake-source-type {
   margin-left: auto;
+  color: #1e3a8a;
+  font-weight: 600;
 }
 
 /* ── Footer Info ─────────────────────────────────────────────────── */
@@ -341,14 +355,14 @@
   flex-direction: column;
   gap: 4px;
   font-size: 11px;
-  color: #555570;
+  color: #64748b;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid #e2e8f0;
 }
 
 .unfake-disclaimer {
   font-style: italic;
-  color: #4a4a66;
+  color: #64748b;
 }
 
 /* ── Scrollbar ───────────────────────────────────────────────────── */
@@ -358,14 +372,14 @@
 }
 
 .unfake-modal::-webkit-scrollbar-track {
-  background: transparent;
+  background: #f8fafc;
 }
 
 .unfake-modal::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: #cbd5e1;
   border-radius: 3px;
 }
 
 .unfake-modal::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: #94a3b8;
 }

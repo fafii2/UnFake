@@ -37,10 +37,15 @@
     modal.innerHTML = `
       <div class="unfake-modal-header">
         <div class="unfake-logo-row">
-          <span class="unfake-logo-icon">🔍</span>
+          <span class="unfake-logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a192f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </span>
           <span class="unfake-logo-text">UnFake</span>
         </div>
-        <button class="unfake-close-btn" id="unfake-close">&times;</button>
+        <button class="unfake-close-btn" id="unfake-close" aria-label="Close">&times;</button>
       </div>
       <div class="unfake-modal-body">
         <div class="unfake-loading">
@@ -110,10 +115,15 @@
     modal.innerHTML = `
       <div class="unfake-modal-header">
         <div class="unfake-logo-row">
-          <span class="unfake-logo-icon">🔍</span>
+          <span class="unfake-logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a192f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </span>
           <span class="unfake-logo-text">UnFake</span>
         </div>
-        <button class="unfake-close-btn" id="unfake-close">&times;</button>
+        <button class="unfake-close-btn" id="unfake-close" aria-label="Close">&times;</button>
       </div>
       <div class="unfake-modal-body">
         <div class="unfake-verdict-section">
