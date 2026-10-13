@@ -1,0 +1,181 @@
+/* ── UnFake Popup Styles ─────────────────────────────────────────── */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+  color: #e0e0e0;
+  background: #1a1a2e;
+  width: 320px;
+}
+
+/* ── Container ───────────────────────────────────────────────────── */
+
+.popup-container {
+  padding: 16px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+
+.popup-header {
+  margin-bottom: 12px;
+}
+
+.logo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.popup-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+
+.popup-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+}
+
+.popup-subtitle {
+  font-size: 11px;
+  color: #8888aa;
+  margin-top: 1px;
+}
+
+/* ── Status Bar ──────────────────────────────────────────────────── */
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #888;
+  flex-shrink: 0;
+  transition: background 0.3s ease;
+}
+
+.status-dot.online {
+  background: #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.4);
+}
+
+.status-dot.offline {
+  background: #f87171;
+  box-shadow: 0 0 6px rgba(248, 113, 113, 0.4);
+}
+
+.status-text {
+  font-size: 12px;
+  color: #aaa;
+}
+
+/* ── Sections ────────────────────────────────────────────────────── */
+
+.popup-section {
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #6b6b8d;
+  margin-bottom: 8px;
+}
+
+/* ── Instructions ────────────────────────────────────────────────── */
+
+.instructions-list {
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #b0b0c8;
+}
+
+.instructions-list strong {
+  color: #d0d0e8;
+}
+
+/* ── Manual Input ────────────────────────────────────────────────── */
+
+.manual-input {
+  width: 100%;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 12px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.manual-input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.manual-input::placeholder {
+  color: #555570;
+}
+
+/* ── Verify Button ───────────────────────────────────────────────── */
+
+.verify-button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+.verify-button:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.verify-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.verify-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+
+.popup-footer {
+  text-align: center;
+  font-size: 10px;
+  color: #555570;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}

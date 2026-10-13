@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UnFake</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="logo-row">
+        <img src="../icons/icon48.png" alt="UnFake" class="popup-logo">
+        <div>
+          <h1 class="popup-title">UnFake</h1>
+          <p class="popup-subtitle">Misinformation Verification</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Status indicator -->
+    <div class="status-bar" id="statusBar">
+      <span class="status-dot" id="statusDot"></span>
+      <span class="status-text" id="statusText">Checking backend...</span>
+    </div>
+
+    <!-- Instructions -->
+    <section class="popup-section">
+      <h2 class="section-title">How to use</h2>
+      <ol class="instructions-list">
+        <li>Select any text on a webpage</li>
+        <li>Right-click and choose <strong>"Verify with UnFake"</strong></li>
+        <li>View the verification result on the page</li>
+      </ol>
+    </section>
+
+    <!-- Manual input -->
+    <section class="popup-section">
+      <h2 class="section-title">Manual verification</h2>
+      <textarea
+        id="manualClaim"
+        class="manual-input"
+        placeholder="Paste a claim to verify..."
+        rows="3"
+        maxlength="5000"
+      ></textarea>
+      <button id="verifyBtn" class="verify-button" disabled>
+        Verify Claim
+      </button>
+    </section>
+
+    <!-- Footer -->
+    <footer class="popup-footer">
+      <span>v0.1.0 — Milestone 1</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
