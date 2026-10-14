@@ -19,7 +19,10 @@
   // ── Message Listener ────────────────────────────────────────────
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.action === "show_loading") {
+    if (message.action === "ping") {
+      sendResponse({ pong: true });
+      return;
+    } else if (message.action === "show_loading") {
       showLoading(message.claim);
     } else if (message.action === "show_result") {
       showResult(message.result);

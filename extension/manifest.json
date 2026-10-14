@@ -6,11 +6,17 @@
   "permissions": [
     "activeTab",
     "contextMenus",
-    "offscreen"
+    "offscreen",
+    "scripting",
+    "tabs"
   ],
   "host_permissions": [
+    "<all_urls>",
     "http://localhost:8000/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+  },
   "background": {
     "service_worker": "background/service-worker.js"
   },

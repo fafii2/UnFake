@@ -90,6 +90,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // ── Image Cropping & OCR Pipeline ───────────────────────────────────
 
 async function handleCropCompleted(cropArea, tab) {
+  if (!tab || !tab.id) {
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    tab = activeTab;
+  }
   if (!tab || !tab.id) return { success: false, error: "No active tab found" };
 
   // 1. Show OCR progress loading state on page
@@ -97,7 +101,7 @@ async function handleCropCompleted(cropArea, tab) {
 
   try {
     // 2. Capture high-resolution viewport screenshot
-    const screenshotUrl = await chrome.tabs.captureVisibleTab(tab.windowId, {
+    const screenshotUrl = await chrome.tabs.captureVisibleTab(tab.windowId || null, {
       format: "png",
     });
 
@@ -157,21 +161,37 @@ async function handleTriggerCropFromPopup() {
 let creatingOffscreen = null;
 
 async function ensureOffscreenDocument() {
-  const existingContexts = await chrome.runtime.getContexts({
-    contextTypes: ["OFFSCREEN_DOCUMENT"],
-  });
+  const offscreenUrl = chrome.runtime.getURL("offscreen/offscreen.html");
 
-  if (existingContexts.length > 0) return;
+  if (typeof chrome.runtime.getContexts === "function") {
+    try {
+      const existingContexts = await chrome.runtime.getContexts({
+        contextTypes: ["OFFSCREEN_DOCUMENT"],
+        documentUrls: [offscreenUrl],
+      });
+      if (existingContexts && existingContexts.length > 0) return;
+    } catch (e) {
+      // getContexts fallback
+    }
+  }
 
   if (creatingOffscreen) {
     await creatingOffscreen;
-  } else {
+    return;
+  }
+
+  try {
     creatingOffscreen = chrome.offscreen.createDocument({
       url: "offscreen/offscreen.html",
-      reasons: ["WORKERS", "DOM_PARSER"],
-      justification: "Run local Tesseract.js OCR and high-DPI canvas cropping",
+      reasons: ["DOM_PARSER", "BLOBS"],
+      justification: "Run local Tesseract.js OCR and canvas cropping",
     });
     await creatingOffscreen;
+  } catch (err) {
+    if (!err.message || !err.message.includes("Only a single offscreen")) {
+      throw err;
+    }
+  } finally {
     creatingOffscreen = null;
   }
 }
@@ -211,16 +231,22 @@ async function callVerifyAPI(claim, inputType) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         claim: claim,
-        input_type: inputType,
+        input_type: inputType || "text",
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
+      let detailMsg = errorData?.detail || errorData?.message;
+      if (Array.isArray(detailMsg)) {
+        detailMsg = detailMsg.map((d) => d.msg || JSON.stringify(d)).join("; ");
+      } else if (typeof detailMsg === "object" && detailMsg !== null) {
+        detailMsg = JSON.stringify(detailMsg);
+      }
       return {
         error: true,
         status: "error",
-        explanation: errorData?.message || `Backend error (HTTP ${response.status})`,
+        explanation: detailMsg || `Backend error (HTTP ${response.status})`,
         original_claim: claim,
       };
     }
@@ -237,12 +263,32 @@ async function callVerifyAPI(claim, inputType) {
   }
 }
 
-// ── Helper: Send message to content script ──────────────────────────
+// ── Helper: Send message to content script with auto-injection ──────
 
 async function sendToContentScript(tabId, message) {
   try {
     await chrome.tabs.sendMessage(tabId, message);
   } catch (err) {
-    console.warn("[UnFake] Could not reach content script:", err.message);
+    console.warn("[UnFake] Direct message to content script failed, attempting script injection:", err.message);
+    try {
+      if (chrome.scripting) {
+        await chrome.scripting.insertCSS({
+          target: { tabId: tabId },
+          files: ["content/content.css"],
+        });
+        await chrome.scripting.executeScript({
+          target: { tabId: tabId },
+          files: [
+            "content/text-selection.js",
+            "content/image-crop.js",
+            "content/content.js",
+          ],
+        });
+        // Retry message after dynamic injection
+        await chrome.tabs.sendMessage(tabId, message);
+      }
+    } catch (injErr) {
+      console.warn("[UnFake] Script injection not possible on tab:", injErr.message);
+    }
   }
 }

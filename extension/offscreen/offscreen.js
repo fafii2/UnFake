@@ -24,7 +24,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function handleOcr(screenshotUrl, cropArea) {
-  // 1. Crop image on canvas taking device pixel ratio into account
+  // 1. Crop image on canvas taking viewport scaling into account
   const croppedDataUrl = await cropImage(screenshotUrl, cropArea);
 
   // 2. Resolve offline asset paths from extension bundle
@@ -32,11 +32,12 @@ async function handleOcr(screenshotUrl, cropArea) {
   const corePath = chrome.runtime.getURL("lib/tesseract-core-lstm.wasm.js");
   const langPath = chrome.runtime.getURL("lib/tessdata");
 
-  console.log("[UnFake OCR] Initializing Tesseract.js worker...");
+  console.log("[UnFake OCR] Initializing Tesseract.js worker with workerBlobURL: false...");
   const worker = await Tesseract.createWorker("eng", 1, {
     workerPath: workerPath,
     corePath: corePath,
     langPath: langPath,
+    workerBlobURL: false, // Required for Manifest V3 local worker loading
     gzip: true,
     logger: (m) => {
       if (m.status === "recognizing text") {
@@ -67,11 +68,16 @@ function cropImage(screenshotUrl, cropArea) {
     const img = new Image();
     img.onload = () => {
       try {
-        const dpr = cropArea.devicePixelRatio || 1;
-        const sx = Math.max(0, Math.round(cropArea.x * dpr));
-        const sy = Math.max(0, Math.round(cropArea.y * dpr));
-        const sWidth = Math.min(img.naturalWidth - sx, Math.round(cropArea.width * dpr));
-        const sHeight = Math.min(img.naturalHeight - sy, Math.round(cropArea.height * dpr));
+        const vpWidth = cropArea.viewportWidth || (cropArea.width > 0 ? (cropArea.x + cropArea.width) : 1);
+        const vpHeight = cropArea.viewportHeight || (cropArea.height > 0 ? (cropArea.y + cropArea.height) : 1);
+
+        const scaleX = img.naturalWidth / vpWidth;
+        const scaleY = img.naturalHeight / vpHeight;
+
+        const sx = Math.max(0, Math.round(cropArea.x * scaleX));
+        const sy = Math.max(0, Math.round(cropArea.y * scaleY));
+        const sWidth = Math.min(img.naturalWidth - sx, Math.round(cropArea.width * scaleX));
+        const sHeight = Math.min(img.naturalHeight - sy, Math.round(cropArea.height * scaleY));
 
         if (sWidth <= 0 || sHeight <= 0) {
           return reject(new Error("Selected crop area is too small or invalid."));

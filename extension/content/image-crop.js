@@ -85,6 +85,8 @@ window.UnFakeCrop = (() => {
           y: rect.y,
           width: rect.width,
           height: rect.height,
+          viewportWidth: window.innerWidth,
+          viewportHeight: window.innerHeight,
           devicePixelRatio: window.devicePixelRatio || 1,
         });
       }
