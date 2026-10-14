@@ -89,6 +89,7 @@ class EvidenceItem(BaseModel):
 class TriageResult(BaseModel):
     """Triage engine classification result."""
     is_verifiable: bool
+    category: Optional[str] = None
     reason: str
 
 

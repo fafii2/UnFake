@@ -47,19 +47,20 @@ class TestVerifyEndpoint:
     def test_verify_returns_triage_result(self, client):
         """The response should include triage information."""
         response = client.post("/api/v1/verify", json={
-            "claim": "Some verifiable claim.",
+            "claim": "President Marcos signed Republic Act 11954 in July 2023.",
             "input_type": "text",
         })
 
         data = response.json()
         assert "triage" in data
         assert data["triage"]["is_verifiable"] is True
+        assert data["triage"]["category"] == "FACTUAL_ASSERTION"
         assert isinstance(data["triage"]["reason"], str)
 
-    def test_verify_returns_evidence_list(self, client):
-        """The response should include an evidence array (stub has one item)."""
+    def test_verify_returns_evidence_list_for_factual_claim(self, client):
+        """The response should include an evidence array for verifiable claims."""
         response = client.post("/api/v1/verify", json={
-            "claim": "A claim to verify.",
+            "claim": "The Department of Health announced the hospital budget for 2024.",
             "input_type": "text",
         })
 
@@ -74,6 +75,36 @@ class TestVerifyEndpoint:
         assert "snippet" in evidence
         assert "relevance" in evidence
         assert "source_type" in evidence
+
+    def test_verify_rejects_opinion_with_triage_status(self, client):
+        """Subjective opinions should return status: triage_rejected with verdict: None."""
+        response = client.post("/api/v1/verify", json={
+            "claim": "In my opinion, adobo is the best dish in the Philippines.",
+            "input_type": "text",
+        })
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "triage_rejected"
+        assert data["verdict"] is None
+        assert data["evidence"] == []
+        assert data["triage"]["is_verifiable"] is False
+        assert data["triage"]["category"] == "OPINION"
+        assert "opinion" in data["explanation"].lower()
+
+    def test_verify_rejects_question_with_triage_status(self, client):
+        """Questions should return status: triage_rejected."""
+        response = client.post("/api/v1/verify", json={
+            "claim": "Bakit ba ang mahal ng presyo ng sibuyas ngayon?",
+            "input_type": "text",
+        })
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "triage_rejected"
+        assert data["verdict"] is None
+        assert data["triage"]["is_verifiable"] is False
+        assert data["triage"]["category"] == "QUESTION"
 
     def test_verify_preserves_original_claim(self, client):
         """The response should echo back the original claim (stripped)."""

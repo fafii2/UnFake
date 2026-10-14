@@ -70,7 +70,10 @@
     const modal = createModal();
 
     const isError = result.error || result.status === "error";
-    const verdict = isError ? "error" : (result.verdict || "unknown");
+    const isTriageRejected = result.status === "triage_rejected";
+    const verdict = isError
+      ? "error"
+      : (isTriageRejected ? "triage_rejected" : (result.verdict || "unknown"));
     const verdictLabel = getVerdictLabel(verdict);
     const verdictClass = getVerdictClass(verdict);
 
@@ -112,6 +115,15 @@
       `;
     }
 
+    let tipHtml = "";
+    if (isTriageRejected) {
+      tipHtml = `
+        <div class="unfake-triage-tip">
+          💡 <strong>Tip:</strong> UnFake verifies empirical claims (dates, numbers, laws, official events). Highlight text containing a specific factual assertion to check it.
+        </div>
+      `;
+    }
+
     modal.innerHTML = `
       <div class="unfake-modal-header">
         <div class="unfake-logo-row">
@@ -135,6 +147,7 @@
           <p>${escapeHtml(result.explanation || "No explanation available.")}</p>
         </div>
         ${triageHtml}
+        ${tipHtml}
         <div class="unfake-original-claim">
           <h3 class="unfake-claim-title">Your claim</h3>
           <blockquote class="unfake-claim-text">
@@ -225,6 +238,7 @@
       contradicted: "❌ Contradicted",
       mixed: "⚠️ Mixed Evidence",
       insufficient_evidence: "❓ Insufficient Evidence",
+      triage_rejected: "ℹ️ Not a Factual Claim",
       error: "⚠️ Error",
       unknown: "❓ Unknown",
     };
@@ -237,6 +251,7 @@
       contradicted: "unfake-verdict-contradicted",
       mixed: "unfake-verdict-mixed",
       insufficient_evidence: "unfake-verdict-insufficient",
+      triage_rejected: "unfake-verdict-triage-rejected",
       error: "unfake-verdict-error",
     };
     return classes[verdict] || "unfake-verdict-insufficient";
