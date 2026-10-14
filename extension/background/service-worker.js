@@ -2,10 +2,10 @@
  * UnFake — Background Service Worker
  *
  * Responsibilities:
- * 1. Create the right-click context menu item.
- * 2. Receive messages from content scripts and the popup.
- * 3. Send verification requests to the backend API.
- * 4. Forward results back to the content script for display.
+ * 1. Register right-click context menus (text verification & image cropping).
+ * 2. Coordinate viewport screenshots via chrome.tabs.captureVisibleTab.
+ * 3. Manage offscreen document for Tesseract.js client-side OCR.
+ * 4. Coordinate verification requests with the FastAPI backend.
  */
 
 const API_BASE = "http://localhost:8000";
@@ -14,82 +14,195 @@ const VERIFY_ENDPOINT = `${API_BASE}/api/v1/verify`;
 // ── Context Menu Setup ──────────────────────────────────────────────
 
 chrome.runtime.onInstalled.addListener(() => {
+  // 1. Text selection verification
   chrome.contextMenus.create({
     id: "unfake-verify",
-    title: "Verify with UnFake",
+    title: "Verify Text with UnFake",
     contexts: ["selection"],
   });
-  console.log("[UnFake] Context menu created.");
+
+  // 2. Image / Screenshot cropping verification
+  chrome.contextMenus.create({
+    id: "unfake-crop",
+    title: "Verify Image / Screen Region",
+    contexts: ["page", "image", "frame"],
+  });
+
+  console.log("[UnFake] Context menus initialized.");
 });
 
 // ── Context Menu Click Handler ──────────────────────────────────────
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (info.menuItemId !== "unfake-verify") return;
+  if (info.menuItemId === "unfake-verify") {
+    const selectedText = info.selectionText;
+    if (!selectedText || !selectedText.trim()) return;
 
-  const selectedText = info.selectionText;
-  if (!selectedText || !selectedText.trim()) {
-    console.warn("[UnFake] No text selected.");
-    return;
+    await sendToContentScript(tab.id, {
+      action: "show_loading",
+      claim: selectedText.trim(),
+    });
+
+    const result = await callVerifyAPI(selectedText.trim(), "text");
+    await sendToContentScript(tab.id, {
+      action: "show_result",
+      result: result,
+    });
+  } else if (info.menuItemId === "unfake-crop") {
+    // Trigger the in-page cropping canvas
+    await sendToContentScript(tab.id, {
+      action: "start_crop",
+    });
   }
-
-  console.log("[UnFake] Verifying selected text:", selectedText.substring(0, 100));
-
-  // Tell the content script to show loading state
-  await sendToContentScript(tab.id, {
-    action: "show_loading",
-    claim: selectedText.trim(),
-  });
-
-  // Call the backend
-  const result = await callVerifyAPI(selectedText.trim(), "text");
-
-  // Send the result to the content script for display
-  await sendToContentScript(tab.id, {
-    action: "show_result",
-    result: result,
-  });
 });
 
-// ── Message Listener (from popup and content scripts) ───────────────
+// ── Message Listener ───────────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "verify_claim") {
-    // Handle async response
     handleVerifyClaim(message, sender)
       .then(sendResponse)
       .catch((err) => {
         console.error("[UnFake] Verification error:", err);
         sendResponse({ success: false, error: err.message });
       });
+    return true;
+  }
 
-    // Return true to indicate async response
+  if (message.action === "crop_completed") {
+    handleCropCompleted(message.cropArea, sender.tab)
+      .then(sendResponse)
+      .catch((err) => {
+        console.error("[UnFake] Crop & OCR error:", err);
+        sendResponse({ success: false, error: err.message });
+      });
+    return true;
+  }
+
+  if (message.action === "trigger_crop_from_popup") {
+    handleTriggerCropFromPopup()
+      .then(sendResponse)
+      .catch((err) => sendResponse({ success: false, error: err.message }));
     return true;
   }
 });
+
+// ── Image Cropping & OCR Pipeline ───────────────────────────────────
+
+async function handleCropCompleted(cropArea, tab) {
+  if (!tab || !tab.id) return { success: false, error: "No active tab found" };
+
+  // 1. Show OCR progress loading state on page
+  await sendToContentScript(tab.id, { action: "show_ocr_loading" });
+
+  try {
+    // 2. Capture high-resolution viewport screenshot
+    const screenshotUrl = await chrome.tabs.captureVisibleTab(tab.windowId, {
+      format: "png",
+    });
+
+    // 3. Ensure the offscreen OCR worker document exists
+    await ensureOffscreenDocument();
+
+    // 4. Send to offscreen document for canvas cropping & Tesseract recognition
+    const ocrResponse = await chrome.runtime.sendMessage({
+      action: "process_image_ocr",
+      screenshotUrl: screenshotUrl,
+      cropArea: cropArea,
+    });
+
+    if (!ocrResponse || !ocrResponse.success) {
+      throw new Error(ocrResponse?.error || "OCR recognition failed.");
+    }
+
+    // 5. Send recognized text and snippet to content script for user review
+    await sendToContentScript(tab.id, {
+      action: "show_ocr_review",
+      data: {
+        text: ocrResponse.text,
+        confidence: ocrResponse.confidence,
+        snippetUrl: ocrResponse.snippetUrl,
+      },
+    });
+
+    return { success: true };
+  } catch (err) {
+    console.error("[UnFake] Image OCR processing failed:", err);
+    await sendToContentScript(tab.id, {
+      action: "show_result",
+      result: {
+        error: true,
+        status: "error",
+        explanation: `Image OCR failed: ${err.message}`,
+        original_claim: "Cropped image region",
+      },
+    });
+    return { success: false, error: err.message };
+  }
+}
+
+async function handleTriggerCropFromPopup() {
+  const [activeTab] = await chrome.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+  if (activeTab && activeTab.id) {
+    await sendToContentScript(activeTab.id, { action: "start_crop" });
+  }
+  return { success: true };
+}
+
+// ── Offscreen Document Manager ──────────────────────────────────────
+
+let creatingOffscreen = null;
+
+async function ensureOffscreenDocument() {
+  const existingContexts = await chrome.runtime.getContexts({
+    contextTypes: ["OFFSCREEN_DOCUMENT"],
+  });
+
+  if (existingContexts.length > 0) return;
+
+  if (creatingOffscreen) {
+    await creatingOffscreen;
+  } else {
+    creatingOffscreen = chrome.offscreen.createDocument({
+      url: "offscreen/offscreen.html",
+      reasons: ["WORKERS", "DOM_PARSER"],
+      justification: "Run local Tesseract.js OCR and high-DPI canvas cropping",
+    });
+    await creatingOffscreen;
+    creatingOffscreen = null;
+  }
+}
+
+// ── Claim Verification Handler ──────────────────────────────────────
 
 async function handleVerifyClaim(message, sender) {
   const { claim, inputType } = message;
   const result = await callVerifyAPI(claim, inputType || "text");
 
-  // If the message came from the popup, also send result to the active tab
-  if (!sender.tab) {
+  // Determine target tab to display result
+  let targetTabId = sender?.tab?.id;
+  if (!targetTabId) {
     const [activeTab] = await chrome.tabs.query({
       active: true,
       currentWindow: true,
     });
-    if (activeTab) {
-      await sendToContentScript(activeTab.id, {
-        action: "show_result",
-        result: result,
-      });
-    }
+    targetTabId = activeTab?.id;
+  }
+
+  if (targetTabId) {
+    await sendToContentScript(targetTabId, {
+      action: "show_result",
+      result: result,
+    });
   }
 
   return { success: !result.error, result };
 }
 
-// ── API Communication ───────────────────────────────────────────────
+// ── Backend API Communication ───────────────────────────────────────
 
 async function callVerifyAPI(claim, inputType) {
   try {

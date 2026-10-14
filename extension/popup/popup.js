@@ -79,6 +79,18 @@ verifyBtn.addEventListener("click", async () => {
   }, 3000);
 });
 
+const cropBtn = document.getElementById("cropBtn");
+if (cropBtn) {
+  cropBtn.addEventListener("click", async () => {
+    try {
+      await chrome.runtime.sendMessage({ action: "trigger_crop_from_popup" });
+      window.close(); // Close popup so user can drag selection on active page
+    } catch (err) {
+      console.error("[UnFake] Failed to trigger crop:", err);
+    }
+  });
+}
+
 // ── Initialize ──────────────────────────────────────────────────────
 
 checkBackendStatus();

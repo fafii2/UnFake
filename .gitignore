@@ -40,8 +40,9 @@ coverage.xml
 # Logs
 *.log
 
-# Extension build artifacts
-extension/lib/tesseract.min.js
+# Node
+node_modules/
+package-lock.json
 
 # Environment variables (keep .env.example)
 backend/.env

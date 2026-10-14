@@ -25,34 +25,41 @@
       <span class="status-text" id="statusText">Checking backend...</span>
     </div>
 
-    <!-- Instructions -->
+    <!-- Image / Quote Card Crop Action -->
     <section class="popup-section">
-      <h2 class="section-title">How to use</h2>
-      <ol class="instructions-list">
-        <li>Select any text on a webpage</li>
-        <li>Right-click and choose <strong>"Verify with UnFake"</strong></li>
-        <li>View the verification result on the page</li>
-      </ol>
+      <h2 class="section-title">Image / Quote Card</h2>
+      <button id="cropBtn" class="crop-button">
+        <span class="crop-btn-icon">✂️</span> Crop & Verify Image Region
+      </button>
     </section>
 
     <!-- Manual input -->
     <section class="popup-section">
-      <h2 class="section-title">Manual verification</h2>
+      <h2 class="section-title">Text verification</h2>
       <textarea
         id="manualClaim"
         class="manual-input"
-        placeholder="Paste a claim to verify..."
+        placeholder="Paste a claim or statement to verify..."
         rows="3"
         maxlength="5000"
       ></textarea>
       <button id="verifyBtn" class="verify-button" disabled>
-        Verify Claim
+        Verify Text Claim
       </button>
+    </section>
+
+    <!-- Instructions -->
+    <section class="popup-section">
+      <h2 class="section-title">Right-Click Shortcuts</h2>
+      <ol class="instructions-list">
+        <li><strong>Selected text</strong>: Right-click → "Verify Text with UnFake"</li>
+        <li><strong>Quote cards / Infographics</strong>: Right-click → "Verify Image / Screen Region"</li>
+      </ol>
     </section>
 
     <!-- Footer -->
     <footer class="popup-footer">
-      <span>v0.1.0 — Milestone 1</span>
+      <span>v0.3.0 — Milestone 3 (Text & Image OCR)</span>
     </footer>
   </div>
 

@@ -23,10 +23,151 @@
       showLoading(message.claim);
     } else if (message.action === "show_result") {
       showResult(message.result);
+    } else if (message.action === "start_crop") {
+      if (window.UnFakeCrop) {
+        window.UnFakeCrop.startCrop((cropArea) => {
+          chrome.runtime.sendMessage({
+            action: "crop_completed",
+            cropArea: cropArea,
+          });
+        });
+      }
+    } else if (message.action === "show_ocr_loading") {
+      showOcrLoading();
+    } else if (message.action === "show_ocr_review") {
+      showOcrReview(message.data);
     }
   });
 
-  // ── Loading State ───────────────────────────────────────────────
+  // ── Loading States ──────────────────────────────────────────────
+
+  function showOcrLoading() {
+    removeExisting();
+
+    const overlay = createOverlay();
+    const modal = createModal();
+
+    modal.innerHTML = `
+      <div class="unfake-modal-header">
+        <div class="unfake-logo-row">
+          <span class="unfake-logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a192f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </span>
+          <span class="unfake-logo-text">UnFake</span>
+        </div>
+        <button class="unfake-close-btn" id="unfake-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="unfake-modal-body">
+        <div class="unfake-loading">
+          <div class="unfake-spinner"></div>
+          <p class="unfake-loading-text">Extracting text from image...</p>
+          <p class="unfake-claim-preview">Running local OCR recognition (100% on-device)</p>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(modal);
+    attachCloseHandler();
+
+    requestAnimationFrame(() => {
+      overlay.classList.add("unfake-visible");
+      modal.classList.add("unfake-visible");
+    });
+  }
+
+  // ── OCR Review & Edit Modal ─────────────────────────────────────
+
+  function showOcrReview(data) {
+    removeExisting();
+
+    const overlay = createOverlay();
+    const modal = createModal();
+
+    const text = data.text || "";
+    const confidence = data.confidence || 0;
+    const snippetUrl = data.snippetUrl || "";
+
+    let confClass = "unfake-confidence-high";
+    let confLabel = `🟢 ${confidence}% Confidence`;
+    if (confidence < 60) {
+      confClass = "unfake-confidence-low";
+      confLabel = `🔴 ${confidence}% Confidence (Check for errors)`;
+    } else if (confidence < 80) {
+      confClass = "unfake-confidence-medium";
+      confLabel = `🟡 ${confidence}% Confidence (Review recommended)`;
+    }
+
+    modal.innerHTML = `
+      <div class="unfake-modal-header">
+        <div class="unfake-logo-row">
+          <span class="unfake-logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a192f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </span>
+          <span class="unfake-logo-text">Review Extracted Text</span>
+        </div>
+        <button class="unfake-close-btn" id="unfake-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="unfake-modal-body">
+        ${snippetUrl ? `
+          <div class="unfake-ocr-preview-container">
+            <img src="${snippetUrl}" alt="Cropped image" class="unfake-ocr-thumbnail">
+          </div>
+        ` : ""}
+        <div class="unfake-ocr-confidence-row">
+          <span class="unfake-ocr-label">Recognized Text</span>
+          <span class="unfake-confidence-badge ${confClass}">
+            ${confLabel}
+          </span>
+        </div>
+        <textarea id="unfake-ocr-input" class="unfake-ocr-textarea" rows="4">${escapeHtml(text)}</textarea>
+        <p class="unfake-ocr-hint">Review or correct any misread words before verifying.</p>
+
+        <div class="unfake-btn-row">
+          <button id="unfake-verify-ocr-btn" class="unfake-btn-primary">Verify Claim</button>
+          <button id="unfake-cancel-ocr-btn" class="unfake-btn-secondary">Cancel</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(modal);
+    attachCloseHandler();
+
+    const verifyBtn = document.getElementById("unfake-verify-ocr-btn");
+    const cancelBtn = document.getElementById("unfake-cancel-ocr-btn");
+    const inputArea = document.getElementById("unfake-ocr-input");
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", removeExisting);
+    }
+
+    if (verifyBtn && inputArea) {
+      verifyBtn.addEventListener("click", () => {
+        const claimText = inputArea.value.trim();
+        if (!claimText) return;
+
+        showLoading(claimText);
+        chrome.runtime.sendMessage({
+          action: "verify_claim",
+          claim: claimText,
+          inputType: "image_ocr",
+        });
+      });
+    }
+
+    requestAnimationFrame(() => {
+      overlay.classList.add("unfake-visible");
+      modal.classList.add("unfake-visible");
+      if (inputArea) inputArea.focus();
+    });
+  }
 
   function showLoading(claim) {
     removeExisting();

@@ -150,6 +150,41 @@ body {
   color: #94a3b8;
 }
 
+/* ── Crop Button ─────────────────────────────────────────────────── */
+
+.crop-button {
+  width: 100%;
+  padding: 10px 14px;
+  background: #f8fafc;
+  color: #0a192f;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.crop-button:hover {
+  background: #ffffff;
+  border-color: #1e3a8a;
+  color: #1e3a8a;
+  box-shadow: 0 2px 6px rgba(10, 25, 47, 0.08);
+  transform: translateY(-1px);
+}
+
+.crop-button:active {
+  transform: translateY(0);
+}
+
+.crop-btn-icon {
+  font-size: 15px;
+}
+
 /* ── Verify Button ───────────────────────────────────────────────── */
 
 .verify-button {
