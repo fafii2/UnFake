@@ -217,13 +217,14 @@ cd backend
 pytest tests/ -v
 ```
 
-All 25 tests should pass:
+All 71 tests should pass:
 
 ```
 tests/test_api.py::TestVerifyEndpoint::test_verify_valid_text_claim PASSED
-tests/test_api.py::TestVerifyEndpoint::test_verify_handles_unicode PASSED
+tests/test_preprocessor.py::TestNormalizeClaimEndToEnd::test_cleans_messy_social_media_selection PASSED
+tests/test_triage.py::TestTriageFactualAssertions::test_verifiable_factual_claims_pass PASSED
 ...
-======================== 25 passed in 0.25s ========================
+======================== 71 passed, 1 warning in 0.42s ========================
 ```
 
 ---
@@ -300,12 +301,14 @@ UnFake/
 
 ## 🗺️ Development Roadmap
 
-- [x] **Milestone 1 — Project Foundation** *(Completed)*: MV3 extension, FastAPI skeleton, CORS configuration, Pydantic contract, 25 tests, White & Navy Blue UI.
-- [ ] **Milestone 2 — Text Input & Triage Engine** *(Next)*: Heuristic filtering for English, Tagalog, and Taglish claims; noise & quote stripping.
-- [ ] **Milestone 3 — Image Input & Client-Side OCR**: Manual screenshot cropping overlay with Tesseract.js integration.
-- [ ] **Milestone 4 — Evidence Retrieval**: Philippine fact-check archive (SQLite + vector search) and configurable live web search.
+- [x] **Milestone 1 — Project Foundation** *(Completed)*: MV3 extension, FastAPI skeleton, CORS configuration, Pydantic contract, Navy Blue & White UI.
+- [x] **Milestone 2 — Text Input & Triage Engine** *(Completed)*: Normalization of quotes/prefixes, rule-based multilingual (English/Tagalog/Taglish) claim classification, 71 tests.
+- [x] **Milestone 3 — Image Input & Client-Side OCR** *(Completed)*: Manual viewport cropping overlay (`image-crop.js`), Manifest V3 offscreen worker for WASM/WebWorker, local offline Tesseract.js OCR, OCR review modal.
+- [ ] **Milestone 4 — Evidence Retrieval** *(Next)*: Philippine fact-check archive (SQLite + vector search) and configurable live web search.
 - [ ] **Milestone 5 — Evidence Evaluation (RAG)**: Multi-source comparison, grounded verdict generation, and citation formatting.
 - [ ] **Milestone 6 — Thesis Evaluation**: End-to-end latency benchmarks, OCR accuracy metrics, and triage classification evaluation.
+
+> 📘 **Teammate Handover Guide**: For an in-depth handover guide covering everything done, architecture details, and how to continue, see [`docs/HANDOVER.md`](docs/HANDOVER.md).
 
 ---
 
