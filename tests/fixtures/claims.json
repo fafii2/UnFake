@@ -1,0 +1,20 @@
+[
+  {"input":"Updated population figures were released.","normalized":"Updated population figures were released.","category":"UNCERTAIN_BORDERLINE"},
+  {"input":"Alertness during storms saves lives.","normalized":"Alertness during storms saves lives.","category":"UNCERTAIN_BORDERLINE"},
+  {"input":"BREAKING: Marcos signed the law in 2023!!!","normalized":"Marcos signed the law in 2023!","category":"FACTUAL_ASSERTION"},
+  {"input":"[JUST IN] \"DepEd announced the opening of classes.\"","normalized":"DepEd announced the opening of classes.","category":"FACTUAL_ASSERTION"},
+  {"input":"Like\n[12:45 PM]\nMarcos signed the law in 2023.\nShare","normalized":"Marcos signed the law in 2023.","category":"FACTUAL_ASSERTION"},
+  {"input":"The rate is 5%.","normalized":"The rate is 5%.","category":"FACTUAL_ASSERTION"},
+  {"input":"Earth is round.","normalized":"Earth is round.","category":"FACTUAL_ASSERTION"},
+  {"input":"I think Marcos signed the law in 2023.","normalized":"I think Marcos signed the law in 2023.","category":"UNCERTAIN_BORDERLINE"},
+  {"input":"In my opinion, adobo is the best dish.","normalized":"In my opinion, adobo is the best dish.","category":"OPINION"},
+  {"input":"Sa tingin ko mas masarap ang adobo.","normalized":"Sa tingin ko mas masarap ang adobo.","category":"OPINION"},
+  {"input":"Bakit ba ang mahal ng presyo ng sibuyas?","normalized":"Bakit ba ang mahal ng presyo ng sibuyas?","category":"QUESTION"},
+  {"input":"Is it true that classes are suspended tomorrow?","normalized":"Is it true that classes are suspended tomorrow?","category":"QUESTION"},
+  {"input":"grabe naman yan haha charot lang mga beh","normalized":"grabe naman yan haha charot lang mga beh","category":"CASUAL_COMMENTARY"},
+  {"input":"Fake news!","normalized":"Fake news!","category":"TOO_SHORT"},
+  {"input":"According to Senator Hontiveros, POGO hubs were involved in illegal operations.","normalized":"According to Senator Hontiveros, POGO hubs were involved in illegal operations.","category":"UNCERTAIN_BORDERLINE"},
+  {"input":"Inaprubahan ng DOH ang ₱15 billion budget noong 2024.","normalized":"Inaprubahan ng DOH ang ₱15 billion budget noong 2024.","category":"FACTUAL_ASSERTION"},
+  {"input":"1. “Pinirmahan ng Pangulo ang batas sa Malacañang.”","normalized":"Pinirmahan ng Pangulo ang batas sa Malacañang.","category":"FACTUAL_ASSERTION"},
+  {"input":"Share prices rose at 12:45 PM.","normalized":"Share prices rose at 12:45 PM.","category":"FACTUAL_ASSERTION"}
+]

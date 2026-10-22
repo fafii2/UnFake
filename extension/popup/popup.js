@@ -19,7 +19,7 @@ const verifyBtn = document.getElementById("verifyBtn");
 
 async function checkBackendStatus() {
   try {
-    const response = await fetch(`${API_BASE}/`, { method: "GET" });
+    const response = await fetch(`${API_BASE}/api/v1/health`, { method: "GET", signal: AbortSignal.timeout(3000) });
     if (response.ok) {
       const data = await response.json();
       statusDot.className = "status-dot online";
@@ -54,10 +54,12 @@ verifyBtn.addEventListener("click", async () => {
   try {
     // Send the claim to the background service worker,
     // which forwards it to the backend API
+    const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
     const response = await chrome.runtime.sendMessage({
       action: "verify_claim",
       claim: claim,
       inputType: "text",
+      tabId: tab?.id,
     });
 
     if (response && response.success) {
@@ -65,10 +67,12 @@ verifyBtn.addEventListener("click", async () => {
       // The result modal is rendered by the content script
     } else {
       verifyBtn.textContent = "Error — try again";
+      document.getElementById('actionStatus').textContent = response?.error || 'Verification failed. Please try again.';
       console.error("Verification failed:", response?.error);
     }
   } catch (err) {
     verifyBtn.textContent = "Error — try again";
+    document.getElementById('actionStatus').textContent = err.message;
     console.error("Failed to send message:", err);
   }
 
@@ -83,10 +87,12 @@ const cropBtn = document.getElementById("cropBtn");
 if (cropBtn) {
   cropBtn.addEventListener("click", async () => {
     try {
-      await chrome.runtime.sendMessage({ action: "trigger_crop_from_popup" });
-      window.close(); // Close popup so user can drag selection on active page
+      const response = await chrome.runtime.sendMessage({ action: "trigger_crop_from_popup" });
+      if (!response?.success) throw new Error(response?.error || 'Cannot crop this page.');
+      window.close();
     } catch (err) {
       console.error("[UnFake] Failed to trigger crop:", err);
+      document.getElementById('actionStatus').textContent = err.message;
     }
   });
 }
@@ -94,3 +100,8 @@ if (cropBtn) {
 // ── Initialize ──────────────────────────────────────────────────────
 
 checkBackendStatus();
+document.getElementById('exampleBtn').addEventListener('click', () => {
+  manualClaim.value = 'The BSP stores 400,000 tons of Tallano gold owned by Ferdinand Marcos Sr.';
+  verifyBtn.disabled = false;
+  manualClaim.focus();
+});

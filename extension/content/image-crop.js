@@ -6,8 +6,9 @@
  * infographics, or altered screenshots.
  */
 
-window.UnFakeCrop = (() => {
+window.UnFakeCrop = window.UnFakeCrop || (() => {
   let activeOverlay = null;
+  let activeCleanup = null;
 
   function startCrop(onComplete) {
     if (activeOverlay) cancelCrop();
@@ -70,6 +71,8 @@ window.UnFakeCrop = (() => {
     function onMouseUp(e) {
       if (!isDragging) return;
       isDragging = false;
+      currentX = Math.max(0, Math.min(width, e.clientX));
+      currentY = Math.max(0, Math.min(height, e.clientY));
 
       const rect = getNormalizedRect(startX, startY, currentX, currentY);
       cleanup();
@@ -102,6 +105,8 @@ window.UnFakeCrop = (() => {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
       window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener('resize', cleanup);
+      activeCleanup = null;
       if (activeOverlay) {
         activeOverlay.remove();
         activeOverlay = null;
@@ -112,9 +117,12 @@ window.UnFakeCrop = (() => {
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
     window.addEventListener("keydown", onKeyDown);
+    window.addEventListener('resize', cleanup, {once: true});
+    activeCleanup = cleanup;
   }
 
   function cancelCrop() {
+    if (activeCleanup) { activeCleanup(); return; }
     if (activeOverlay) {
       activeOverlay.remove();
       activeOverlay = null;

@@ -1,5 +1,18 @@
 # UnFake — Architecture
 
+## Current v0.4.0 flow
+
+User action grants activeTab access -> scripts are injected on demand -> local normalization
+and triage -> FastAPI repeats validation -> concurrent SQLite archive and Tavily search ->
+deduplicated sources -> Gemini stance evaluation or offline exact-claim archive rating ->
+validated citations and on-page result. Screenshots are cropped and OCR-processed locally
+in the offscreen document before review. They never reach the backend.
+
+SQLite stores validated JSON records, FTS5 text, and model-tagged vectors. Embedding adapters
+support Gemini or optional local sentence-transformers inference. Missing configuration
+degrades explicitly to keyword/exact archive search. See [IMPLEMENTATION.md](IMPLEMENTATION.md)
+for current details; the foundational component map below is retained for orientation.
+
 ## System Overview
 
 UnFake is a two-part system:

@@ -15,6 +15,8 @@
 
   const MODAL_ID = "unfake-modal";
   const OVERLAY_ID = "unfake-overlay";
+  let activeRequest = null;
+  let escapeHandler = null;
 
   // ── Message Listener ────────────────────────────────────────────
 
@@ -23,10 +25,17 @@
       sendResponse({ pong: true });
       return;
     } else if (message.action === "show_loading") {
+      activeRequest = message.requestId;
       showLoading(message.claim);
     } else if (message.action === "show_result") {
+      if (message.requestId && activeRequest !== message.requestId) {
+        sendResponse({success: true, dismissed: true});
+        return;
+      }
       showResult(message.result);
     } else if (message.action === "start_crop") {
+      activeRequest = null;
+      removeExisting();
       if (window.UnFakeCrop) {
         window.UnFakeCrop.startCrop((cropArea) => {
           chrome.runtime.sendMessage({
@@ -36,10 +45,18 @@
         });
       }
     } else if (message.action === "show_ocr_loading") {
+      activeRequest = null;
       showOcrLoading();
     } else if (message.action === "show_ocr_review") {
+      activeRequest = null;
       showOcrReview(message.data);
+    } else if (message.action === 'prepare_capture') {
+      removeExisting();
+      window.UnFakeCrop?.cancelCrop();
+      requestAnimationFrame(() => requestAnimationFrame(() => sendResponse({success: true})));
+      return true;
     }
+    sendResponse({success: true});
   });
 
   // ── Loading States ──────────────────────────────────────────────
@@ -95,13 +112,13 @@
     const snippetUrl = data.snippetUrl || "";
 
     let confClass = "unfake-confidence-high";
-    let confLabel = `🟢 ${confidence}% Confidence`;
+    let confLabel = `🟢 Text recognition: ${confidence}%`;
     if (confidence < 60) {
       confClass = "unfake-confidence-low";
-      confLabel = `🔴 ${confidence}% Confidence (Check for errors)`;
+      confLabel = `🔴 Text recognition: ${confidence}% (Check for errors)`;
     } else if (confidence < 80) {
       confClass = "unfake-confidence-medium";
-      confLabel = `🟡 ${confidence}% Confidence (Review recommended)`;
+      confLabel = `🟡 Text recognition: ${confidence}% (Review recommended)`;
     }
 
     modal.innerHTML = `
@@ -120,7 +137,7 @@
       <div class="unfake-modal-body">
         ${snippetUrl ? `
           <div class="unfake-ocr-preview-container">
-            <img src="${snippetUrl}" alt="Cropped image" class="unfake-ocr-thumbnail">
+            <img src="${escapeHtml(snippetUrl.startsWith('data:image/png;base64,') ? snippetUrl : '')}" alt="Cropped image" class="unfake-ocr-thumbnail">
           </div>
         ` : ""}
         <div class="unfake-ocr-confidence-row">
@@ -129,7 +146,7 @@
             ${confLabel}
           </span>
         </div>
-        <textarea id="unfake-ocr-input" class="unfake-ocr-textarea" rows="4">${escapeHtml(text)}</textarea>
+        <textarea id="unfake-ocr-input" class="unfake-ocr-textarea" rows="4" maxlength="5000">${escapeHtml(text.slice(0, 5000))}</textarea>
         <p class="unfake-ocr-hint">Review or correct any misread words before verifying.</p>
 
         <div class="unfake-btn-row">
@@ -148,7 +165,7 @@
     const inputArea = document.getElementById("unfake-ocr-input");
 
     if (cancelBtn) {
-      cancelBtn.addEventListener("click", removeExisting);
+      cancelBtn.addEventListener("click", dismiss);
     }
 
     if (verifyBtn && inputArea) {
@@ -161,7 +178,9 @@
           action: "verify_claim",
           claim: claimText,
           inputType: "image_ocr",
-        });
+        }).then(response => {
+          if (response && !response.success && response.error) showResult({error: true, explanation: response.error, original_claim: claimText});
+        }).catch(() => showResult({error: true, explanation: 'Reload this page to reconnect UnFake.', original_claim: claimText}));
       });
     }
 
@@ -229,16 +248,17 @@
           ${result.evidence.map((e) => `
             <div class="unfake-evidence-item">
               <div class="unfake-evidence-header">
-                <a href="${escapeHtml(e.source_url)}" target="_blank" rel="noopener noreferrer"
+                <a href="${escapeHtml(safeUrl(e.source_url))}" target="_blank" rel="noopener noreferrer"
                    class="unfake-evidence-link">
                   ${escapeHtml(e.title)}
                 </a>
-                <span class="unfake-evidence-badge unfake-badge-${e.relevance}">
-                  ${e.relevance}
+                <span class="unfake-evidence-badge unfake-badge-${['supporting','contradicting','contextual'].includes(e.relevance) ? e.relevance : 'contextual'}">
+                  ${escapeHtml(e.relevance)}
                 </span>
               </div>
               <p class="unfake-evidence-snippet">${escapeHtml(e.snippet)}</p>
               <div class="unfake-evidence-meta">
+                ${e.id ? `<span>[${escapeHtml(e.id)}]</span>` : ''}
                 ${e.publisher ? `<span>${escapeHtml(e.publisher)}</span>` : ""}
                 ${e.published_date ? `<span>· ${escapeHtml(e.published_date)}</span>` : ""}
                 <span class="unfake-source-type">${e.source_type === "local_archive" ? "📁 Archive" : "🌐 Web"}</span>
@@ -250,10 +270,10 @@
     }
 
     let triageHtml = "";
-    if (result.triage) {
+    if (isTriageRejected && result.triage) {
       triageHtml = `
         <div class="unfake-triage-info">
-          <span class="unfake-triage-label">Triage:</span>
+          <span class="unfake-triage-label">Input check:</span>
           ${escapeHtml(result.triage.reason)}
         </div>
       `;
@@ -290,6 +310,10 @@
         <div class="unfake-explanation">
           <p>${escapeHtml(result.explanation || "No explanation available.")}</p>
         </div>
+        ${result.confidence_kind === 'calibrated_reliability' && Number.isFinite(result.confidence)
+          ? `<p class="unfake-triage-info">Calibrated verdict reliability: ${Math.round(result.confidence * 100)}%</p>`
+          : (!isTriageRejected && !isError ? '<p class="unfake-triage-info">Confidence has not been calibrated. Review the sources before relying on this assessment.</p>' : '')}
+        ${(result.warnings || []).length ? `<div class="unfake-system-notices" role="status">${result.warnings.map(w => `<p>${escapeHtml(w)}</p>`).join('')}</div>` : ''}
         ${triageHtml}
         ${tipHtml}
         <div class="unfake-original-claim">
@@ -301,7 +325,7 @@
         ${evidenceHtml}
         <div class="unfake-footer-info">
           ${result.processing_time_ms != null
-            ? `<span>Processed in ${result.processing_time_ms}ms</span>`
+            ? `<span>Processed in ${Number(result.processing_time_ms)}ms</span>`
             : ""}
           <span class="unfake-disclaimer">
             This is an assistive tool. Verify important claims through multiple sources.
@@ -334,6 +358,9 @@
     const modal = document.createElement("div");
     modal.id = MODAL_ID;
     modal.className = "unfake-modal";
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'UnFake verification');
     return modal;
   }
 
@@ -342,32 +369,44 @@
     const overlay = document.getElementById(OVERLAY_ID);
 
     if (closeBtn) {
-      closeBtn.addEventListener("click", removeExisting);
+      closeBtn.addEventListener("click", dismiss);
     }
     if (overlay) {
-      overlay.addEventListener("click", removeExisting);
+      overlay.addEventListener("click", dismiss);
     }
 
     // ESC key
-    document.addEventListener("keydown", function handler(e) {
+    escapeHandler = function(e) {
       if (e.key === "Escape") {
-        removeExisting();
-        document.removeEventListener("keydown", handler);
+        dismiss();
       }
-    });
+    };
+    document.addEventListener('keydown', escapeHandler);
   }
 
   function removeExisting() {
+    if (escapeHandler) document.removeEventListener('keydown', escapeHandler);
+    escapeHandler = null;
     const modal = document.getElementById(MODAL_ID);
     const overlay = document.getElementById(OVERLAY_ID);
     if (modal) modal.remove();
     if (overlay) overlay.remove();
   }
 
+  function dismiss() {
+    activeRequest = null;
+    removeExisting();
+  }
+
+  function safeUrl(value) {
+    try {
+      const url = new URL(value);
+      return ['http:', 'https:'].includes(url.protocol) && !url.username ? url.href : '#';
+    } catch { return '#'; }
+  }
+
   function escapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
+    return String(text ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   function truncate(text, maxLength) {

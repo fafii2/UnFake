@@ -1,5 +1,24 @@
 # UnFake — Project Handover & Progress Documentation 🔍🛡️
 
+> **Current implementation update (October 22, 2026, v0.4.0):** The original handover
+> below is preserved as historical context. See [IMPLEMENTATION.md](IMPLEMENTATION.md)
+> for the current setup, architecture, privacy behavior, and remaining research work.
+> The placeholder verification path is replaced by SQLite archive retrieval and
+> exact reviewed-claim evaluation. Tavily search, Gemini structured evaluation, cloud/local
+> embeddings, citation validation, calibrated-reliability tooling, and measurement scripts
+> are implemented. Client-side normalization/triage and user-triggered injection now match
+> the thesis design. Real Chromium testing has exercised text verification, local crop/OCR,
+> editable OCR review, result rendering, unsafe-source handling, and popup health.
+> Live services still need valid keys; semantic vectors need indexing. Four sourced
+> archive examples are included. A representative corpus, calibration labels, and human
+> study are still required before claiming thesis completion or measured general accuracy.
+> No credentials, participant results, or confidence scores were fabricated.
+>
+> **Latest local checks:** 130 backend tests passed (one dependency deprecation warning),
+> 8 extension tests passed, and all 6 real-browser workflow checks passed. The Windows
+> setup script was exercised successfully. Browser screenshots and a six-case development
+> benchmark were saved with the delivery artifacts; they are not a thesis evaluation.
+
 > **Notice for Incoming Teammate**: This document summarizes the complete project context, what has been built and tested to date, key design decisions, known hurdles and how they were solved, and an actionable roadmap for upcoming milestones.
 
 ---

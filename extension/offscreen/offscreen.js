@@ -47,13 +47,17 @@ async function handleOcr(screenshotUrl, cropArea) {
   });
 
   console.log("[UnFake OCR] Recognizing text...");
-  const result = await worker.recognize(croppedDataUrl);
-  await worker.terminate();
+  let result;
+  try {
+    result = await worker.recognize(croppedDataUrl);
+  } finally {
+    await worker.terminate();
+  }
 
   const recognizedText = (result.data && result.data.text) ? result.data.text.trim() : "";
   const confidence = Math.round((result.data && result.data.confidence) || 0);
 
-  console.log(`[UnFake OCR] Complete (${confidence}% confidence):`, recognizedText.substring(0, 80));
+  console.log(`[UnFake OCR] Complete (${confidence}% recognition confidence).`);
 
   return {
     success: true,

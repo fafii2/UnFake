@@ -5,6 +5,7 @@ All routes are mounted under /api/v1 by main.py.
 """
 
 import time
+import asyncio
 
 from fastapi import APIRouter, HTTPException
 
@@ -22,8 +23,19 @@ from api.schemas import (
 )
 from services.preprocessor import normalize_claim
 from services.triage import triage_claim
+from services.retrieval import retrieve_evidence
+from services.evaluator import evaluate_claim
+from config import settings
 
 router = APIRouter()
+
+
+@router.get('/health')
+async def health():
+    return {'service': 'unfake-api', 'version': '0.4.0', 'status': 'running',
+            'live_search_configured': bool(settings.SEARCH_API_KEY),
+            'evaluation_configured': bool(settings.GEMINI_API_KEY),
+            'embedding_provider': settings.EMBEDDING_PROVIDER}
 
 
 @router.post(
@@ -47,7 +59,7 @@ async def verify_claim(request: VerifyRequest) -> VerifyResponse:
       3. If non-verifiable: return immediately (status: triage_rejected)
       4. If verifiable: coordinate evidence retrieval & RAG evaluation
     """
-    start_time = time.time()
+    start_time = time.perf_counter()
 
     # ── Step 1: Preprocessing & Normalization ────────────────────────
     normalized = normalize_claim(request.claim)
@@ -62,7 +74,7 @@ async def verify_claim(request: VerifyRequest) -> VerifyResponse:
 
     # ── Step 3: Early Exit if Non-Verifiable ──────────────────────────
     if not triage_result["is_verifiable"]:
-        processing_time = int((time.time() - start_time) * 1000)
+        processing_time = int((time.perf_counter() - start_time) * 1000)
         return VerifyResponse(
             status=VerifyStatus.TRIAGE_REJECTED,
             verdict=None,
@@ -82,38 +94,26 @@ async def verify_claim(request: VerifyRequest) -> VerifyResponse:
             processing_time_ms=processing_time,
         )
 
-    # ── Step 4: Verification Pipeline (M4/M5 stub) ───────────────────
-    processing_time = int((time.time() - start_time) * 1000)
+    timings = {'preprocess_triage_ms': round((time.perf_counter() - start_time) * 1000, 3)}
 
-    return VerifyResponse(
-        status=VerifyStatus.COMPLETED,
-        verdict=Verdict.INSUFFICIENT_EVIDENCE,
-        explanation=(
-            "[STUB] This claim passed triage and was accepted for verification. "
-            f"Triage category: {triage_result['category']}. "
-            "Evidence retrieval and RAG evaluation will be integrated in Milestones 4 and 5."
-        ),
-        confidence=None,
-        triage=TriageResult(
-            is_verifiable=True,
-            category=triage_result["category"],
-            reason=triage_result["reason"],
-        ),
-        evidence=[
-            EvidenceItem(
-                title="[STUB] Example fact-check article",
-                source_url="https://example.com/fact-check",
-                publisher="Example Publisher",
-                published_date="2025-01-01",
-                snippet=(
-                    "This is an example evidence snippet. In the real system, "
-                    "this would contain a relevant excerpt from a fact-checking "
-                    "article or news source."
-                ),
-                relevance=EvidenceRelevance.CONTEXTUAL,
-                source_type=EvidenceSourceType.LOCAL_ARCHIVE,
-            )
-        ],
-        original_claim=request.claim,
-        processing_time_ms=processing_time,
-    )
+    async def run_pipeline():
+        retrieved_at = time.perf_counter()
+        retrieved = await retrieve_evidence(normalized)
+        timings['retrieval_ms'] = round((time.perf_counter() - retrieved_at) * 1000, 3)
+        evaluated_at = time.perf_counter()
+        evaluated = await evaluate_claim(normalized, retrieved['evidence'])
+        timings['evaluation_ms'] = round((time.perf_counter() - evaluated_at) * 1000, 3)
+        return VerifyResponse(
+            status=VerifyStatus.COMPLETED, verdict=evaluated['verdict'],
+            explanation=evaluated['explanation'], confidence=evaluated['confidence'],
+            confidence_kind=evaluated['confidence_kind'], evaluation_method=evaluated['evaluation_method'],
+            triage=TriageResult(**triage_result),
+            evidence=[EvidenceItem(**item) for item in evaluated['evidence']],
+            warnings=retrieved['warnings'] + evaluated['warnings'], timings=timings,
+            original_claim=request.claim,
+            processing_time_ms=int((time.perf_counter() - start_time) * 1000))
+
+    try:
+        return await asyncio.wait_for(run_pipeline(), timeout=settings.VERIFY_TIMEOUT_SECONDS)
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail='Verification timed out. Please try again.')

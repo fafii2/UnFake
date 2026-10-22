@@ -2,6 +2,10 @@
 
 ## Version: v1
 
+Implementation version: 0.4.0. See [IMPLEMENTATION.md](IMPLEMENTATION.md) for provider setup
+and privacy. With empty keys, the backend uses reviewed exact archive matches; related
+sources alone never establish a verdict. No example citations or placeholder responses remain.
+
 **Base URL:** `http://localhost:8000/api/v1`
 
 ---
@@ -27,6 +31,13 @@ Submit a factual claim for evidence-based verification.
 | `input_type` | `string` | Yes | How the claim was captured. One of: `text`, `image_ocr`. |
 
 #### Successful Response (200)
+
+Responses also include `warnings` (availability/coverage notices), `timings` (stage
+milliseconds), `evaluation_method` (`gemini`, `exact_archive_match`, `insufficient`, or `none`),
+and `confidence_kind` (`unavailable` or `calibrated_reliability`). Each evidence item has a
+request-scoped `id` such as `S1`; explanation citations refer to those IDs. Source URLs are
+validated HTTP/HTTPS URLs. `confidence` is null until a matching empirical calibration
+artifact is configured; OCR recognition confidence is a separate client-side value.
 
 ```json
 {
@@ -108,6 +119,10 @@ Submit a factual claim for evidence-based verification.
 ---
 
 ### `GET /`
+
+The root route is at `http://localhost:8000/`. The prefixed health route
+`GET /api/v1/health` additionally reports booleans for configured live-search/evaluation
+providers and the selected embedding provider. It never returns keys.
 
 Health check endpoint.
 

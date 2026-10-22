@@ -1,0 +1,6 @@
+{"id":"archive-en","claim":"The BSP stores 400,000 tons of Tallano gold owned by Ferdinand Marcos Sr.","expected_verifiable":true,"expected_verdict":"contradicted","relevant_urls":["https://verafiles.org/articles/vera-files-fact-check-no-tons-of-tallano-gold-allegedly-owned-by-marcoses-in-bsp-storage"]}
+{"id":"archive-fil","claim":"May 400,000 toneladang Tallano gold ni Ferdinand Marcos Sr. sa BSP.","expected_verifiable":true,"expected_verdict":"contradicted"}
+{"id":"opinion-en","claim":"In my opinion, adobo is the best dish.","expected_verifiable":false,"expected_verdict":null}
+{"id":"opinion-fil","claim":"Sa tingin ko mas masarap ang adobo.","expected_verifiable":false,"expected_verdict":null}
+{"id":"question-fil","claim":"Bakit ba ang mahal ng presyo ng sibuyas?","expected_verifiable":false,"expected_verdict":null}
+{"id":"no-evidence","claim":"The Philippine hospital budget increased to 98 billion in 2049.","expected_verifiable":true,"expected_verdict":"insufficient_evidence"}

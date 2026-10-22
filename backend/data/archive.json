@@ -1,0 +1,51 @@
+[
+  {
+    "claim_text": "The BSP stores 400,000 tons of Tallano gold owned by Ferdinand Marcos Sr.",
+    "aliases": ["May 400,000 toneladang Tallano gold ni Ferdinand Marcos Sr. sa BSP."],
+    "verdict": "contradicted",
+    "original_rating": "False / myth",
+    "title": "No tons of Tallano gold allegedly owned by Marcoses in BSP storage",
+    "publisher": "VERA Files",
+    "source_url": "https://verafiles.org/articles/vera-files-fact-check-no-tons-of-tallano-gold-allegedly-owned-by-marcoses-in-bsp-storage",
+    "published_date": "2022-05-29",
+    "retrieved_date": "2026-10-22",
+    "snippet": "VERA Files reported that the BSP denied having a record of Tallano gold in its storage. Its fact-check rejected a video alleging that more than 400,000 tons of Marcos-owned gold were kept in the central bank basement."
+  },
+  {
+    "claim_text": "President Ferdinand Marcos Jr. stole the country's gold reserves in February 2025.",
+    "aliases": [],
+    "verdict": "contradicted",
+    "original_rating": "False / no basis",
+    "title": "Marcos stealing Philippine gold reserves has no basis",
+    "publisher": "VERA Files via Tsek.ph",
+    "source_url": "https://verafiles.org/articles/fact-check-marcos-stealing-ph-gold-reserves-has-no-basis",
+    "provenance_url": "https://www.tsek.ph/marcos-stealing-ph-gold-reserves-has-no-basis/",
+    "published_date": "2025-02-28",
+    "retrieved_date": "2026-10-22",
+    "snippet": "VERA Files rated the February 2025 theft claim false. It cited the BSP's authority to manage international reserves and its explanation that buying and selling gold is part of the central bank's regular functions."
+  },
+  {
+    "claim_text": "There will be a strong earthquake in the Philippines on April 22, 2025.",
+    "aliases": ["May malakas na lindol sa Pilipinas sa Abril 22, 2025."],
+    "verdict": "contradicted",
+    "original_rating": "Fake",
+    "title": "Earthquakes cannot be predicted; April 22 warning is fake",
+    "publisher": "VERA Files",
+    "source_url": "https://verafiles.org/articles/fact-check-earthquakes-cannot-be-predicted-april-22-warning-fake",
+    "published_date": "2025-04-15",
+    "retrieved_date": "2026-10-22",
+    "snippet": "VERA Files debunked videos predicting a strong Philippine earthquake on April 22, 2025. The report cited PHIVOLCS explaining that reliable technology cannot predict a large earthquake's exact date, time and location. This is a rejection of the forecast, not a promise that an earthquake cannot occur."
+  },
+  {
+    "claim_text": "DSWD is giving students P2,000 to P6,000 in educational cash assistance every Saturday from June 7 to 28, 2025.",
+    "aliases": [],
+    "verdict": "contradicted",
+    "original_rating": "Fake",
+    "title": "No educational cash aid from DSWD under the advertised June 2025 schedule",
+    "publisher": "VERA Files",
+    "source_url": "https://verafiles.org/articles/fact-check-no-educational-cash-aid-from-dswd",
+    "published_date": "2025-06-10",
+    "retrieved_date": "2026-10-22",
+    "snippet": "VERA Files rejected a TikTok claim advertising P2,000 to P6,000 student payouts every Saturday on June 7 to 28, 2025. It cited a June 5 DSWD advisory about the Tara, Basa! tutoring program. This record concerns that particular advertised schedule, not all assistance programs."
+  }
+]

@@ -8,8 +8,11 @@
  * 4. Coordinate verification requests with the FastAPI backend.
  */
 
+importScripts('../shared/rules.js', '../shared/claims.js');
+
 const API_BASE = "http://localhost:8000";
 const VERIFY_ENDPOINT = `${API_BASE}/api/v1/verify`;
+const pendingRequests = new Map();
 
 // ── Context Menu Setup ──────────────────────────────────────────────
 
@@ -38,15 +41,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     const selectedText = info.selectionText;
     if (!selectedText || !selectedText.trim()) return;
 
-    await sendToContentScript(tab.id, {
-      action: "show_loading",
-      claim: selectedText.trim(),
-    });
-
-    const result = await callVerifyAPI(selectedText.trim(), "text");
-    await sendToContentScript(tab.id, {
-      action: "show_result",
-      result: result,
+    await handleVerifyClaim({claim: selectedText.trim(), inputType: 'text'}, {tab}).catch(err => {
+      console.warn('[UnFake] Cannot verify on this page:', err.message);
     });
   } else if (info.menuItemId === "unfake-crop") {
     // Trigger the in-page cropping canvas
@@ -96,14 +92,19 @@ async function handleCropCompleted(cropArea, tab) {
   }
   if (!tab || !tab.id) return { success: false, error: "No active tab found" };
 
-  // 1. Show OCR progress loading state on page
-  await sendToContentScript(tab.id, { action: "show_ocr_loading" });
-
   try {
-    // 2. Capture high-resolution viewport screenshot
+    const assertActive = async () => {
+      const [active] = await chrome.tabs.query({active: true, windowId: tab.windowId});
+      if (active?.id !== tab.id) throw new Error('Return to the selected tab and crop again.');
+    };
+    await assertActive();
+    // Wait for the page to paint after removing all extension overlays.
+    await sendToContentScript(tab.id, {action: 'prepare_capture'});
+    await assertActive();
     const screenshotUrl = await chrome.tabs.captureVisibleTab(tab.windowId || null, {
       format: "png",
     });
+    await sendToContentScript(tab.id, { action: 'show_ocr_loading' });
 
     // 3. Ensure the offscreen OCR worker document exists
     await ensureOffscreenDocument();
@@ -152,7 +153,7 @@ async function handleTriggerCropFromPopup() {
   });
   if (activeTab && activeTab.id) {
     await sendToContentScript(activeTab.id, { action: "start_crop" });
-  }
+  } else throw new Error('No active page found.');
   return { success: true };
 }
 
@@ -183,7 +184,7 @@ async function ensureOffscreenDocument() {
   try {
     creatingOffscreen = chrome.offscreen.createDocument({
       url: "offscreen/offscreen.html",
-      reasons: ["DOM_PARSER", "BLOBS"],
+      reasons: ["WORKERS", "BLOBS"],
       justification: "Run local Tesseract.js OCR and canvas cropping",
     });
     await creatingOffscreen;
@@ -200,11 +201,9 @@ async function ensureOffscreenDocument() {
 
 async function handleVerifyClaim(message, sender) {
   const { claim, inputType } = message;
-  const result = await callVerifyAPI(claim, inputType || "text");
-
-  // Determine target tab to display result
-  let targetTabId = sender?.tab?.id;
-  if (!targetTabId) {
+  // Resolve the initiating tab before waiting on any network request.
+  let targetTabId = sender?.tab?.id ?? message.tabId;
+  if (targetTabId == null) {
     const [activeTab] = await chrome.tabs.query({
       active: true,
       currentWindow: true,
@@ -212,22 +211,39 @@ async function handleVerifyClaim(message, sender) {
     targetTabId = activeTab?.id;
   }
 
-  if (targetTabId) {
-    await sendToContentScript(targetTabId, {
-      action: "show_result",
-      result: result,
-    });
+  if (targetTabId == null) throw new Error('Open a regular webpage to display verification results.');
+  const requestId = crypto.randomUUID();
+  pendingRequests.set(targetTabId, requestId);
+  try {
+    await sendToContentScript(targetTabId, {action: 'show_loading', claim, requestId});
+    const result = await callVerifyAPI(claim, inputType || 'text');
+    if (pendingRequests.get(targetTabId) !== requestId) return {success: false, error: 'A newer verification replaced this request.'};
+    await sendToContentScript(targetTabId, {action: 'show_result', result, requestId});
+    return {success: !result.error, result, error: result.error ? result.explanation : undefined};
+  } finally {
+    if (pendingRequests.get(targetTabId) === requestId) pendingRequests.delete(targetTabId);
   }
-
-  return { success: !result.error, result };
 }
 
 // ── Backend API Communication ───────────────────────────────────────
 
 async function callVerifyAPI(claim, inputType) {
+  const started = performance.now();
+  const normalized = UnFakeClaims.normalize(claim);
+  if (!normalized || typeof claim !== 'string' || claim.length > 5000) {
+    return {error: true, status: 'error', explanation: 'Enter a claim containing 1 to 5,000 characters.', original_claim: claim};
+  }
+  const triage = UnFakeClaims.triage(normalized);
+  if (!triage.is_verifiable) {
+    return {status: 'triage_rejected', verdict: null, confidence: null, triage, evidence: [],
+      explanation: `This text was not submitted for verification. ${triage.reason}`,
+      original_claim: claim.trim(), processing_time_ms: Math.round(performance.now() - started),
+      evaluation_method: 'client_triage', warnings: []};
+  }
   try {
     const response = await fetch(VERIFY_ENDPOINT, {
       method: "POST",
+      signal: AbortSignal.timeout(28000),
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         claim: claim,
@@ -257,7 +273,9 @@ async function callVerifyAPI(claim, inputType) {
     return {
       error: true,
       status: "error",
-      explanation: `Could not reach the UnFake backend. Is it running at ${API_BASE}?`,
+      explanation: err.name === 'TimeoutError' || err.name === 'AbortError'
+        ? 'Verification timed out. Please try again.'
+        : `Could not reach the UnFake backend. Is it running at ${API_BASE}?`,
       original_claim: claim,
     };
   }
@@ -286,9 +304,10 @@ async function sendToContentScript(tabId, message) {
         });
         // Retry message after dynamic injection
         await chrome.tabs.sendMessage(tabId, message);
-      }
+      } else throw new Error('Page access is unavailable.');
     } catch (injErr) {
       console.warn("[UnFake] Script injection not possible on tab:", injErr.message);
+      throw new Error('UnFake cannot display results on this page. Open a regular HTTP or HTTPS webpage and try again.');
     }
   }
 }

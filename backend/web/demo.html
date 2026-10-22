@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Try UnFake</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#eff3f8;font:18px/1.6 Arial,sans-serif;color:#142744}
+    main{max-width:960px;margin:64px auto;padding:0 24px}h1{font-size:42px;line-height:1.15;margin:12px 0 20px}
+    .eyebrow{font-size:12px;font-weight:700;letter-spacing:2px;color:#546b8c}.intro{max-width:700px;color:#52627a}
+    .card{background:white;padding:28px 32px;border:1px solid #cbd5e1;border-radius:14px;max-width:820px;margin:24px 0}
+    .label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#8a3b38}
+    #ocr{background:white;color:#111;font:32px/1.5 Arial,sans-serif;padding:32px;max-width:820px;border:2px solid #cbd5e1;border-radius:14px}
+    li{margin:8px 0}small{color:#52627a}a{color:#1e3a8a}footer{font-size:13px;margin:32px 0;color:#52627a}
+  </style>
+</head>
+<body><main>
+  <div class="eyebrow">UNFAKE · LOCAL DEMONSTRATION</div>
+  <h1>Check a claim where you read it.</h1>
+  <p class="intro">Use this page to try your extension. The sample below repeats a debunked assertion so you can see how UnFake connects a claim to its sources.</p>
+  <div class="card" id="card"><div class="label">Known false claim · demonstration only</div>
+    <p>The BSP stores 400,000 tons of Tallano gold owned by Ferdinand Marcos Sr.</p>
+  </div>
+  <ol>
+    <li>Highlight the sample claim, right-click, and choose <strong>Verify Text with UnFake</strong>.</li>
+    <li>For image input, choose <strong>Verify Image / Screen Region</strong> and drag around the quote card below.</li>
+    <li>Review the recognized text before sending it for verification.</li>
+  </ol>
+  <div class="label">Quote-card example · same debunked assertion</div>
+  <div id="ocr">The BSP stores 400,000 tons of Tallano gold owned by Ferdinand Marcos Sr.</div>
+  <footer>Four reviewed archive examples are included. Live search and model evaluation require provider configuration. UnFake is an assistive research tool. <a href="/docs">Backend documentation</a></footer>
+</main></body>
+</html>

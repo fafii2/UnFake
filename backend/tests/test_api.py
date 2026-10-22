@@ -28,7 +28,8 @@ class TestVerifyEndpoint:
         assert data["status"] == "completed"
         assert data["verdict"] == "insufficient_evidence"
         assert "explanation" in data
-        assert "[STUB]" in data["explanation"]
+        assert "[STUB]" not in data["explanation"]
+        assert data['evidence'] == []
         assert data["original_claim"] == "The Philippines has over 7,000 islands."
         assert data["processing_time_ms"] >= 0
         assert isinstance(data["evidence"], list)
@@ -60,7 +61,7 @@ class TestVerifyEndpoint:
     def test_verify_returns_evidence_list_for_factual_claim(self, client):
         """The response should include an evidence array for verifiable claims."""
         response = client.post("/api/v1/verify", json={
-            "claim": "The Department of Health announced the hospital budget for 2024.",
+            "claim": "The BSP stores 400,000 tons of Tallano gold owned by Ferdinand Marcos Sr.",
             "input_type": "text",
         })
 
@@ -75,6 +76,9 @@ class TestVerifyEndpoint:
         assert "snippet" in evidence
         assert "relevance" in evidence
         assert "source_type" in evidence
+        assert data['verdict'] == 'contradicted'
+        assert evidence['publisher'] == 'VERA Files'
+        assert evidence['source_url'].startswith('https://verafiles.org/')
 
     def test_verify_rejects_opinion_with_triage_status(self, client):
         """Subjective opinions should return status: triage_rejected with verdict: None."""

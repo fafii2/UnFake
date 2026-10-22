@@ -1,5 +1,9 @@
 # UnFake — Setup Guide
 
+> For v0.4.0, start with [IMPLEMENTATION.md](IMPLEMENTATION.md), which documents the
+> Windows setup/launcher, live provider settings, semantic indexing, browser tests,
+> privacy behavior, and evaluation workflow. The manual backend setup below remains valid.
+
 ## Prerequisites
 
 - **Python 3.10+** — [Download](https://www.python.org/downloads/)

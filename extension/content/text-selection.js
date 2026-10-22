@@ -5,7 +5,7 @@
  * Used by the content script and triggered by the context menu.
  */
 
-const UnFakeSelection = {
+globalThis.UnFakeSelection = globalThis.UnFakeSelection || {
   /**
    * Get the currently selected text on the page.
    * @returns {string} The selected text, trimmed.

@@ -104,7 +104,7 @@ NAMED_ENTITIES_PATTERN = re.compile(
 METRICS_PATTERN = re.compile(
     r"(?:"
     r"[₱\$€¥]\s*[\d,]+(?:\.\d+)?|"
-    r"\b\d+(?:\.\d+)?\s*(?:%|percent|porsyento)\b|"
+    r"\b\d+(?:\.\d+)?\s*(?:%|(?:percent|porsyento)\b)|"
     r"\b\d+(?:\.\d+)?\s*(?:billion|bilyon|million|milyon|trillion|trilyon|thousand|libo)\b"
     r")",
     re.IGNORECASE,
@@ -153,7 +153,8 @@ def triage_claim(claim: str) -> dict:
     words = text.split()
 
     # Rule 1: Too short / sentence fragment
-    if len(words) < 4:
+    short_assertion = len(words) == 3 and bool(re.search(r"\b(?:is|are|was|were|ay)\b", text, re.I))
+    if len(words) < 4 and not short_assertion:
         return {
             "is_verifiable": False,
             "category": TriageCategory.TOO_SHORT.value,
@@ -198,7 +199,16 @@ def triage_claim(claim: str) -> dict:
 
     # Rule 4: Subjective Opinion / Personal View
     opinion_match = OPINION_MARKERS_PATTERN.search(text)
-    if opinion_match:
+    # A qualified factual event can still be checked; evaluative judgments cannot.
+    qualified_fact = (
+        opinion_match
+        and bool(re.fullmatch(r"i\s+think|i\s+believe|sa\s+tingin\s+ko|naniniwala\s+ako", opinion_match.group(0), re.I))
+        and bool(VERIFIABLE_PREDICATES_PATTERN.search(text))
+        and bool(NAMED_ENTITIES_PATTERN.search(text))
+        and bool(TEMPORAL_PATTERN.search(text) or METRICS_PATTERN.search(text))
+        and len(list(OPINION_MARKERS_PATTERN.finditer(text))) == 1
+    )
+    if opinion_match and not qualified_fact:
         return {
             "is_verifiable": False,
             "category": TriageCategory.OPINION.value,
@@ -220,15 +230,15 @@ def triage_claim(claim: str) -> dict:
     ])
 
     # Rule 6: Attributed or Borderline Statement
-    if attribution_match and factual_score >= 1:
+    if (attribution_match or qualified_fact) and factual_score >= 1:
         return {
             "is_verifiable": True,
             "category": TriageCategory.UNCERTAIN_BORDERLINE.value,
-            "reason": f"Claim contains an attributed or reported assertion ('{attribution_match.group(0)}'); proceeding with verification.",
+            "reason": "Claim contains an attributed, qualified or reported assertion; proceeding with verification.",
         }
 
     # Rule 7: Clear Factual Assertion
-    if factual_score >= 1:
+    if factual_score >= 1 or short_assertion:
         matched_indicators = []
         if entities_match:
             matched_indicators.append(f"entity: '{entities_match.group(0)}'")

@@ -14,7 +14,7 @@ import unicodedata
 
 # Common news/social broadcast prefixes to clean off claims (e.g. "BREAKING:", "[JUST IN]", "(ALERT)")
 BROADCAST_PREFIXES_REGEX = re.compile(
-    r"^(?:[\[\(]?(?:breaking(?:\s+news)?|just\s+in|alert|urgent|balita|ulat|update|fyi|flash(?:\s+report)?)[\]\)]?\s*[:\-–—]?\s*)+",
+    r"^(?:[\[\(]?(?:breaking(?:\s+news)?|just\s+in|alert|urgent|balita|ulat|update|fyi|flash(?:\s+report)?)\b[\]\)]?\s*[:\-–—]?\s*)+",
     re.IGNORECASE,
 )
 
@@ -94,6 +94,9 @@ def normalize_claim(raw_text: str) -> str:
 
     # Normalize unicode characters (NFC form)
     text = unicodedata.normalize("NFC", raw_text)
+    # Drop only whole UI/timestamp lines, never dates or words inside an assertion.
+    noise = re.compile(r"^(?:(?:like|reply|share|see more|see less)|\d+\s*(?:h|hr|hrs|min|mins)\s*(?:ago)?|\[?\d{1,2}:\d{2}\s*(?:am|pm)?\]?)$", re.I)
+    text = '\n'.join(line for line in text.splitlines() if not noise.fullmatch(line.strip()))
 
     # Normalize typographic quotes to straight quotes
     text = normalize_quotes(text)

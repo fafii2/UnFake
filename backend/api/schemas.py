@@ -10,7 +10,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, HttpUrl
 
 
 # ---------- Enums ----------
@@ -79,11 +79,17 @@ class EvidenceItem(BaseModel):
     """A single piece of retrieved evidence."""
     title: str
     source_url: str
+    id: str = ""
     publisher: str
     published_date: Optional[str] = None
     snippet: str
     relevance: EvidenceRelevance
     source_type: EvidenceSourceType
+
+    @field_validator("source_url")
+    @classmethod
+    def safe_source_url(cls, value: str) -> str:
+        return str(HttpUrl(value))
 
 
 class TriageResult(BaseModel):
@@ -102,12 +108,16 @@ class VerifyResponse(BaseModel):
         default=None,
         ge=0.0,
         le=1.0,
-        description="Reserved for future use. Currently always null.",
+        description="Empirically calibrated verdict reliability; null until a matching calibration artifact is configured.",
     )
     triage: Optional[TriageResult] = None
     evidence: list[EvidenceItem] = Field(default_factory=list)
     original_claim: str
     processing_time_ms: int = Field(ge=0)
+    warnings: list[str] = Field(default_factory=list)
+    timings: dict[str, float] = Field(default_factory=dict)
+    evaluation_method: str = "none"
+    confidence_kind: str = "unavailable"
 
 
 class ErrorResponse(BaseModel):

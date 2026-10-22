@@ -1,0 +1,10 @@
+{
+  "name": "unfake",
+  "version": "0.4.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/extension.test.cjs",
+    "test:browser": "node tests/browser-e2e.cjs"
+  },
+  "devDependencies": {"playwright": "1.62.1"}
+}

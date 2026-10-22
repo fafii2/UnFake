@@ -42,7 +42,10 @@ coverage.xml
 
 # Node
 node_modules/
-package-lock.json
+test-results/
+# Local measurements and fitted calibration artifacts can contain study data.
+backend/data/calibration.json
+backend/data/predictions*.jsonl
 
 # Environment variables (keep .env.example)
 backend/.env
