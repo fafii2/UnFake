@@ -8,10 +8,15 @@ Audit date: 2026-11-05 (Philippines). Antigravity opened the existing `fafii2/Un
 - Inspected the extension and existing FastAPI backend. See [BASELINE.md](BASELINE.md) for the code paths, test evidence, and differences from the SRS.
 - `npm test` passed 8 tests. Python compilation, syntax checks for eight first-party extension scripts, and checks for the five manifest entry paths passed. The unpacked extension is the checked-in `extension/` directory and has no separate bundle step.
 
-## Outstanding verification
+## Chrome and backend follow-up
 
-- Backend suite and local server startup require the pinned Python dependencies. A fresh isolated install failed at package-index DNS resolution. The README's historical run remains separate from this session.
-- Chrome opened its extension manager. UnFake was absent and Developer mode was off. Loading the unpacked repository extension is pending action-time confirmation. Edge was unnecessary for reaching an extension manager. Firefox remains deferred because the previous session could not enforce its browser URL policy.
-- `git ls-remote --heads origin` failed in the shell with `getaddrinfo() thread failed to start`. Antigravity successfully published the initial documentation commit and established the upstream tracking branch.
+- Enabled Developer Mode with user confirmation and loaded the repository's unpacked `extension/` directory in Chrome. Chrome enabled UnFake v0.4.0.
+- Tested the highlighted-text context menu on a public VERA Files fact-check, the toolbar popup, client-side opinion triage, and viewport cropping with local OCR. OCR produced editable text and reported 95% recognition confidence for one crop.
+- The browser showed a backend-unreachable error after factual text and reviewed OCR submissions. Chrome's extension diagnostics recorded `TypeError: Failed to fetch` in the service worker. The popup's archived example populated its input.
+- An isolated in-process FastAPI smoke check with cached dependencies passed health, demo, exact archive verification with a VERA Files source, insufficient evidence, and opinion triage. The smoke environment used newer cached versions of FastAPI, Uvicorn, and Pydantic than the project pins. It used a temporary SQLite database with external providers disabled.
+- A loopback-only server reported successful startup using the same cached packages with a temporary audit event loop. Chrome still could not reach it. The pinned install failed at DNS resolution, so the full backend suite and browser-to-backend verification remain open.
+- Antigravity published the audit branch. Firefox remains deferred. Chrome was sufficient for the client-side baseline.
 
-Once the pinned environment is available, rerun the backend tests and start it on loopback port 8000 with external providers disabled. Load `extension/` in Chrome or Edge and test a public news selection, the demo screenshot, evidence rendering, and the offline and insufficient-evidence states. Reconcile the OCR review step, modal isolation, input validation, and live-search provider with the SRS. Live provider validation and a reviewed research corpus remain open. Phase 1 has a static baseline and remains open for runtime checks.
+## Remaining verification
+
+Run the pinned backend suite in a host environment with package access. Start FastAPI on loopback port 8000, then confirm the archived verdict and clickable evidence in Chrome through both highlighted text and reviewed OCR. Reconcile editable OCR review, modal isolation, input validation, and the live search provider with the SRS. Live provider validation and a reviewed research corpus remain open. Phase 1 remains open for the browser-to-backend check.
