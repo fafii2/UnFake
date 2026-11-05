@@ -11,7 +11,7 @@ Audit date: 2026-11-05 (Philippines). Antigravity opened the existing `fafii2/Un
 ## Outstanding verification
 
 - Backend suite and local server startup require the pinned Python dependencies. A fresh isolated install failed at package-index DNS resolution. The README's historical run remains separate from this session.
-- Live Chromium verification is pending. Firefox is deferred because the previous Computer Use session could not enforce its browser URL policy.
-- `git ls-remote --heads origin` failed in the shell with `getaddrinfo() thread failed to start`. The local tracking refs describe the checkout and do not establish current remote state.
+- Chrome opened its extension manager. UnFake was absent and Developer mode was off. Loading the unpacked repository extension is pending action-time confirmation. Edge was unnecessary for reaching an extension manager. Firefox remains deferred because the previous session could not enforce its browser URL policy.
+- `git ls-remote --heads origin` failed in the shell with `getaddrinfo() thread failed to start`. Antigravity successfully published the initial documentation commit and established the upstream tracking branch.
 
 Once the pinned environment is available, rerun the backend tests and start it on loopback port 8000 with external providers disabled. Load `extension/` in Chrome or Edge and test a public news selection, the demo screenshot, evidence rendering, and the offline and insufficient-evidence states. Reconcile the OCR review step, modal isolation, input validation, and live-search provider with the SRS. Live provider validation and a reviewed research corpus remain open. Phase 1 has a static baseline and remains open for runtime checks.
