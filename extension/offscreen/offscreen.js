@@ -72,6 +72,11 @@ function cropImage(screenshotUrl, cropArea) {
     const img = new Image();
     img.onload = () => {
       try {
+        if (!img.naturalWidth || !img.naturalHeight || img.naturalWidth * img.naturalHeight > 20000000) {
+          throw new Error('Use an image smaller than 20 megapixels.');
+        }
+        cropArea = cropArea || {x: 0, y: 0, width: img.naturalWidth,
+          height: img.naturalHeight, viewportWidth: img.naturalWidth, viewportHeight: img.naturalHeight};
         const vpWidth = cropArea.viewportWidth || (cropArea.width > 0 ? (cropArea.x + cropArea.width) : 1);
         const vpHeight = cropArea.viewportHeight || (cropArea.height > 0 ? (cropArea.y + cropArea.height) : 1);
 

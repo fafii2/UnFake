@@ -214,6 +214,7 @@
         <div class="unfake-loading">
           <div class="unfake-spinner"></div>
           <p class="unfake-loading-text">Verifying claim...</p>
+          <p class="unfake-claim-preview">Searching sources and checking evidence. This may take about a minute.</p>
           <p class="unfake-claim-preview">"${escapeHtml(truncate(claim, 150))}"</p>
         </div>
       </div>

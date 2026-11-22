@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "UnFake",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "AI-assisted, in-context misinformation verification. Select text or crop images to verify claims against fact-checking sources.",
   "permissions": [
     "activeTab",
@@ -11,7 +11,7 @@
     "tabs"
   ],
   "host_permissions": [
-    "http://localhost:8000/*"
+    "http://127.0.0.1:8001/*"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"

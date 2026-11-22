@@ -6,10 +6,14 @@ UnFake combines a Chromium Manifest V3 extension with a local FastAPI backend. S
 text or crop a screenshot region, review the extracted claim, and see a verdict with
 dated evidence links on the page you are reading.
 
-## Current build: v0.4.0
+## Current build: v0.4.1
 
 - Text selection and manual popup input.
 - Local screenshot cropping and Tesseract.js OCR with editable text review.
+- Saved PNG/JPEG/WebP screenshot input, processed locally before text review.
+- An explicit live-connection check for search and evaluation, cached for five minutes.
+- Short browser polling requests while live verification finishes on the backend.
+- One retry for temporary Gemini service failures; evidence remains visible on failure.
 - Client-side English/Filipino/Taglish preprocessing and rule triage; backend revalidation.
 - SQLite FTS5 archive with reviewed imports, provenance, and model-tagged vector storage.
 - Concurrent archive/live retrieval through a configurable Tavily adapter.
@@ -19,9 +23,9 @@ dated evidence links on the page you are reading.
 - Optional empirical confidence calibration, stage timings, and evaluation utilities.
 - User-triggered page injection through activeTab access, local deadlines, and safe links.
 
-**130 backend tests and 8 extension tests pass.** A real Chrome-for-Testing run has
-exercised the backend/archive result flow, client triage, unsafe-source rendering, crop,
-local WASM OCR, OCR review/submission, and popup health.
+See [the presentation checklist](docs/PRESENTATION.md) for the current validation
+results and remaining browser checks. Live API checks are separate from unit tests;
+neither is an accuracy benchmark.
 
 The included archive has **four sourced demonstration records**, all debunks. It is not
 a representative benchmark. Live services require keys; semantic search requires indexing;
@@ -40,13 +44,17 @@ Then run `Start-UnFake.cmd`. Keep its terminal open while using the extension.
 
 1. Open `chrome://extensions` or `edge://extensions`.
 2. Enable **Developer mode**, choose **Load unpacked**, and select `extension`.
-3. Open [the local demo](http://localhost:8000/demo).
-4. Highlight its example claim and use **Verify Text with UnFake**, or use **Verify Image /
-   Screen Region** to crop the quote card. The popup includes an archived example button.
+3. Open Facebook or a news article, then open UnFake and click **Check live connections**.
+4. Paste one factual statement and choose **Verify Text Claim**, or select it on the page
+   and right-click **Verify Text with UnFake**.
+5. For a post image, choose **Crop text from this page** or select a saved screenshot.
+   Review and correct the extracted text, then verify it.
 
-The demo works without API keys. The backend stays on your machine at
-`http://localhost:8000`; [API documentation](http://localhost:8000/docs) and
-[health](http://localhost:8000/api/v1/health) are available while it is running.
+An optional [local development page](http://127.0.0.1:8001/demo) remains available for
+offline archive testing. Live news checking requires working search and model keys.
+The backend stays on your machine at
+`http://127.0.0.1:8001`; [API documentation](http://127.0.0.1:8001/docs) and
+[health](http://127.0.0.1:8001/api/v1/health) are available while it is running.
 
 For manual Python setup or provider configuration, see [IMPLEMENTATION.md](docs/IMPLEMENTATION.md).
 
@@ -61,8 +69,17 @@ cd backend
 ```
 
 Optional local embeddings use `requirements-semantic.txt` and `EMBEDDING_PROVIDER=local`.
-Provider adapters are tested with mocked responses; a live provider run still needs
-valid keys. See the implementation guide for model settings, indexing, and limitations.
+The default evaluation model is `gemini-3.5-flash-lite`. On November 19, a full API
+request for "The Philippines has 7,641 islands." returned a grounded `supported`
+assessment using Gemini and five live-search sources in 16.079 seconds. This is a
+connection smoke test, not an accuracy benchmark. See the implementation guide for
+settings, indexing, and limitations. Check provider connections from `backend` with:
+
+```powershell
+& ..\.venv\Scripts\python.exe -m scripts.check_providers
+```
+
+Keys remain in the backend `.env` file, never in the browser or tracked source.
 
 ## Tests and evaluation
 

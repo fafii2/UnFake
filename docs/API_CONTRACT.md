@@ -2,15 +2,40 @@
 
 ## Version: v1
 
-Implementation version: 0.4.0. See [IMPLEMENTATION.md](IMPLEMENTATION.md) for provider setup
+Implementation version: 0.4.1. See [IMPLEMENTATION.md](IMPLEMENTATION.md) for provider setup
 and privacy. With empty keys, the backend uses reviewed exact archive matches; related
 sources alone never establish a verdict. No example citations or placeholder responses remain.
 
-**Base URL:** `http://localhost:8000/api/v1`
+**Base URL:** `http://127.0.0.1:8001/api/v1`
 
 ---
 
 ## Endpoints
+
+### `POST /verifications` and `GET /verifications/{id}`
+
+The extension uses these endpoints for live checks. POST accepts the same validated
+body as `/verify` and immediately returns HTTP 202 with `{"id":"<32 hex characters>",
+"status":"pending"}`. The backend completes the pipeline with a 75-second deadline.
+The extension polls GET once per second using requests with a 10-second timeout,
+keeping each browser fetch below the service-worker limit.
+
+GET returns `pending`, or `{"id":"...","status":"completed","result":{...}}` where
+`result` has the standard verification response below. The outer completed state can
+contain an inner `triage_rejected` response. Failures use `status: "error"` and a
+sanitized `error` string. Unknown, expired, or pre-restart IDs return HTTP 404.
+
+Jobs live in memory for up to ten minutes. At most 32 are retained; completed jobs
+can be evicted when capacity is reached. If all 32 are pending, POST returns 429.
+Use one backend worker for this local application so polls reach the same job store.
+
+### `GET /health` and `POST /readiness`
+
+Health reports configuration flags and the most recent `live_check`, if any. It
+does not call paid providers. POST readiness explicitly tests live search and model
+evaluation and caches the result for five minutes. `ready` is true only if both
+checks return `status: "ok"`; sanitized HTTP statuses identify provider failures.
+No credentials or provider error bodies are included.
 
 ### `POST /verify`
 
@@ -120,9 +145,11 @@ artifact is configured; OCR recognition confidence is a separate client-side val
 
 ### `GET /`
 
-The root route is at `http://localhost:8000/`. The prefixed health route
+The root route is at `http://127.0.0.1:8001/`. The prefixed health route
 `GET /api/v1/health` additionally reports booleans for configured live-search/evaluation
-providers and the selected embedding provider. It never returns keys.
+providers, the configured evaluation model (`evaluation_model`), and the selected
+embedding provider. These are configuration indicators, not live connectivity tests.
+It never returns keys.
 
 Health check endpoint.
 

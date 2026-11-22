@@ -9,15 +9,21 @@
 > are implemented. Client-side normalization/triage and user-triggered injection now match
 > the thesis design. Real Chromium testing has exercised text verification, local crop/OCR,
 > editable OCR review, result rendering, unsafe-source handling, and popup health.
-> Live services still need valid keys; semantic vectors need indexing. Four sourced
+> Local keys are configured and excluded from Git. Tavily retrieved live sources and
+> Gemini passed a single-source assessment, but a full live result remains unconfirmed:
+> citation-format issues were fixed; the latest attempt returned Gemini HTTP 503.
+> Semantic vectors still need indexing. Four sourced
 > archive examples are included. A representative corpus, calibration labels, and human
 > study are still required before claiming thesis completion or measured general accuracy.
 > No credentials, participant results, or confidence scores were fabricated.
 >
-> **Latest local checks:** 130 backend tests passed (one dependency deprecation warning),
+> **Latest local checks:** 132 backend tests passed (one dependency deprecation warning),
 > 8 extension tests passed, and all 6 real-browser workflow checks passed. The Windows
 > setup script was exercised successfully. Browser screenshots and a six-case development
 > benchmark were saved with the delivery artifacts; they are not a thesis evaluation.
+> Live-provider follow-up: grouped citation markers are accepted only when every ID has
+> a validated quote; the prompt now requires an entry for every prose citation. The
+> provider timeout is 20 seconds, within the existing 25-second verification deadline.
 
 > **Notice for Incoming Teammate**: This document summarizes the complete project context, what has been built and tested to date, key design decisions, known hurdles and how they were solved, and an actionable roadmap for upcoming milestones.
 
@@ -128,7 +134,7 @@
 ### A. Chrome Extension (Manifest V3)
 - **`extension/manifest.json`**:
   - Permissions: `activeTab`, `contextMenus`, `offscreen`, `scripting`, `tabs`.
-  - Host Permissions: `<all_urls>`, `http://localhost:8000/*`.
+  - Host Permissions: `<all_urls>`, `http://127.0.0.1:8001/*`.
   - CSP: `"extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"`.
 - **`extension/background/service-worker.js`**:
   - Sets up right-click menus:
@@ -239,10 +245,10 @@ cd backend
 # Activate virtualenv (Windows PowerShell)
 .\venv\Scripts\Activate.ps1
 # Run FastAPI server
-uvicorn main:app --reload --port 8000
+uvicorn main:app --reload --port 8001
 ```
-- Swagger API Docs: `http://localhost:8000/docs`
-- Health Check: `http://localhost:8000/api/v1/health`
+- Swagger API Docs: `http://127.0.0.1:8001/docs`
+- Health Check: `http://127.0.0.1:8001/api/v1/health`
 
 ### Loading / Reloading the Extension
 1. Open Chrome $\to$ `chrome://extensions/`.

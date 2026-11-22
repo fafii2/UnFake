@@ -19,7 +19,7 @@ def test_checkable_short_and_qualified_claims(claim):
 
 
 def test_health_endpoint_and_validation_contract(client):
-    assert client.get('/api/v1/health').json()['version'] == '0.4.0'
+    assert client.get('/api/v1/health').json()['version'] == '0.4.1'
     result = client.post('/api/v1/verify', json={'claim': '', 'input_type': 'text'})
     assert result.status_code == 422
     assert result.json()['error_code'] == 'EMPTY_CLAIM'

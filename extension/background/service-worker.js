@@ -10,8 +10,8 @@
 
 importScripts('../shared/rules.js', '../shared/claims.js');
 
-const API_BASE = "http://localhost:8000";
-const VERIFY_ENDPOINT = `${API_BASE}/api/v1/verify`;
+const API_BASE = "http://127.0.0.1:8001";
+const VERIFY_ENDPOINT = `${API_BASE}/api/v1/verifications`;
 const pendingRequests = new Map();
 
 // ── Context Menu Setup ──────────────────────────────────────────────
@@ -55,6 +55,12 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 // ── Message Listener ───────────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "upload_screenshot") {
+    handleUploadedScreenshot(message, sender)
+      .then(sendResponse)
+      .catch(err => sendResponse({success: false, error: err.message}));
+    return true;
+  }
   if (message.action === "verify_claim") {
     handleVerifyClaim(message, sender)
       .then(sendResponse)
@@ -106,29 +112,7 @@ async function handleCropCompleted(cropArea, tab) {
     });
     await sendToContentScript(tab.id, { action: 'show_ocr_loading' });
 
-    // 3. Ensure the offscreen OCR worker document exists
-    await ensureOffscreenDocument();
-
-    // 4. Send to offscreen document for canvas cropping & Tesseract recognition
-    const ocrResponse = await chrome.runtime.sendMessage({
-      action: "process_image_ocr",
-      screenshotUrl: screenshotUrl,
-      cropArea: cropArea,
-    });
-
-    if (!ocrResponse || !ocrResponse.success) {
-      throw new Error(ocrResponse?.error || "OCR recognition failed.");
-    }
-
-    // 5. Send recognized text and snippet to content script for user review
-    await sendToContentScript(tab.id, {
-      action: "show_ocr_review",
-      data: {
-        text: ocrResponse.text,
-        confidence: ocrResponse.confidence,
-        snippetUrl: ocrResponse.snippetUrl,
-      },
-    });
+    await recognizeAndReview(tab.id, screenshotUrl, cropArea);
 
     return { success: true };
   } catch (err) {
@@ -144,6 +128,39 @@ async function handleCropCompleted(cropArea, tab) {
     });
     return { success: false, error: err.message };
   }
+}
+
+async function handleUploadedScreenshot(message, sender) {
+  const tabId = sender?.tab?.id ?? message.tabId;
+  if (tabId == null) throw new Error('Open a news or Facebook page first.');
+  if (typeof message.imageUrl !== 'string' ||
+      !/^data:image\/(png|jpeg|webp);base64,/.test(message.imageUrl) ||
+      message.imageUrl.length > 7 * 1024 * 1024) {
+    throw new Error('Choose a PNG, JPEG, or WebP screenshot under 5 MB.');
+  }
+  // Null means recognize the whole image. Dimensions are validated locally.
+  await sendToContentScript(tabId, {action: 'show_ocr_loading'});
+  try {
+    await recognizeAndReview(tabId, message.imageUrl, null);
+    return {success: true};
+  } catch (err) {
+    await sendToContentScript(tabId, {action: 'show_result', result: {
+      error: true, status: 'error', explanation: `Image OCR failed: ${err.message}`,
+      original_claim: 'Uploaded screenshot',
+    }});
+    return {success: false, error: err.message};
+  }
+}
+
+async function recognizeAndReview(tabId, screenshotUrl, cropArea) {
+  await ensureOffscreenDocument();
+  const result = await chrome.runtime.sendMessage({
+    action: 'process_image_ocr', screenshotUrl, cropArea,
+  });
+  if (!result?.success) throw new Error(result?.error || 'OCR recognition failed.');
+  await sendToContentScript(tabId, {action: 'show_ocr_review', data: {
+    text: result.text, confidence: result.confidence, snippetUrl: result.snippetUrl,
+  }});
 }
 
 async function handleTriggerCropFromPopup() {
@@ -243,7 +260,7 @@ async function callVerifyAPI(claim, inputType) {
   try {
     const response = await fetch(VERIFY_ENDPOINT, {
       method: "POST",
-      signal: AbortSignal.timeout(28000),
+      signal: AbortSignal.timeout(10000),
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         claim: claim,
@@ -267,7 +284,25 @@ async function callVerifyAPI(claim, inputType) {
       };
     }
 
-    return await response.json();
+    let data = await response.json();
+    const deadline = performance.now() + 85000;
+    while (data.status === 'pending') {
+      if (typeof data.id !== 'string' || !/^[a-f0-9]{32}$/.test(data.id)) throw new Error('Invalid verification response.');
+      if (performance.now() > deadline) return {
+        error: true, status: 'error', original_claim: claim,
+        explanation: 'Verification timed out. The live services may be busy; please try again.',
+      };
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const poll = await fetch(`${VERIFY_ENDPOINT}/${data.id}`, {signal: AbortSignal.timeout(10000)});
+      if (!poll.ok) return {
+        error: true, status: 'error', original_claim: claim,
+        explanation: 'Verification was interrupted or the backend restarted. Please try again.',
+      };
+      data = await poll.json();
+    }
+    if (data.status === 'error') return {error: true, status: 'error', original_claim: claim,
+      explanation: data.error || 'Verification failed. Please try again.'};
+    return data.result || data;
   } catch (err) {
     console.error("[UnFake] API call failed:", err);
     return {

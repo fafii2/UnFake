@@ -80,18 +80,44 @@ def test_mixed_needs_two_stances(evidence):
     assert result[-1]['relevance'] == 'supporting'
 
 
+def test_grouped_citation_markers_accept_only_validated_sources(evidence):
+    other = {**evidence[0], 'id': 'S2'}
+    identifier = evidence[0]['id']
+    assessment = assessment_for(evidence, explanation=f'Sources agree [{identifier}, S2].', citations=[
+        {'evidence_id': identifier, 'relevance': 'contradicting', 'quote': evidence[0]['snippet']},
+        {'evidence_id': 'S2', 'relevance': 'contradicting', 'quote': other['snippet']},
+    ])
+    assert len(evaluator.validate_assessment(assessment, [*evidence, other])) == len(evidence) + 1
+
+
+def test_grouped_citation_markers_still_reject_unknown_sources(evidence):
+    assessment = assessment_for(evidence, explanation=f"Sources agree [{evidence[0]['id']}, invented].")
+    with pytest.raises(ValueError, match='unvalidated citation marker'):
+        evaluator.validate_assessment(assessment, evidence)
+
+
 def test_gemini_adapter_uses_structured_output_and_source_ids(evidence, monkeypatch):
     monkeypatch.setattr(settings, 'GEMINI_API_KEY', 'fake-test-key')
-    expected = assessment_for(evidence)
+    expected = assessment_for(evidence, explanation=f"The archived source contradicts this claim. [{evidence[0]['id']}]")
     def respond(request):
         assert request.headers['x-goog-api-key'] == 'fake-test-key'
         body = json.loads(request.content)
         assert body['generationConfig']['responseJsonSchema']['type'] == 'object'
+        assert body['generationConfig']['responseJsonSchema']['properties']['explanation']['pattern'] == r'^[^\[\]]+$'
         supplied = json.loads(body['contents'][0]['parts'][0]['text'])
         assert supplied['evidence'][0]['id'] == evidence[0]['id']
         assert 'UNTRUSTED DATA' in body['systemInstruction']['parts'][0]['text']
-        return httpx.Response(200, json={'candidates': [{'content': {'parts': [{'text': expected.model_dump_json()}]}}]})
+        assert 'Do not put source IDs or square brackets in the explanation' in body['systemInstruction']['parts'][0]['text']
+        raw = expected.model_dump(mode='json')
+        raw['explanation'] = 'The archived source contradicts this claim.'
+        return httpx.Response(200, json={'candidates': [{'content': {'parts': [{'text': json.dumps(raw)}]}}]})
     factory = httpx.AsyncClient
     monkeypatch.setattr(evaluator.httpx, 'AsyncClient', lambda **kwargs: factory(transport=httpx.MockTransport(respond), **kwargs))
     result = asyncio.run(evaluator.model_assessment('claim', evidence))
     assert result == expected
+
+
+def test_provider_explanation_cannot_bypass_citation_list(evidence):
+    data = assessment_for(evidence).model_dump()
+    with pytest.raises(ValueError):
+        evaluator.ProviderAssessment.model_validate(data)

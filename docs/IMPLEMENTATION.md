@@ -1,4 +1,8 @@
-# UnFake v0.4.0: implementation and remaining research work
+# UnFake v0.4.1: implementation and remaining research work
+
+For the live Facebook/news workflow and current validation limits, start with
+[PRESENTATION.md](PRESENTATION.md). This update adds saved screenshot input, explicit
+provider readiness checks, asynchronous live verification, and transient-model retries.
 
 This build follows the objectives in the supplied thesis chapters. It is a runnable
 development build; it does not establish the thesis hypothesis or claim calibrated
@@ -38,7 +42,9 @@ accuracy without research data.
 2. Run `Start-UnFake.cmd` and keep its window open.
 3. In `chrome://extensions` or `edge://extensions`, enable Developer mode, choose
    **Load unpacked**, and select the repository's `extension` folder.
-4. Visit `http://localhost:8000/demo` and use the right-click actions or toolbar popup.
+4. Open Facebook or a news article, run **Check live connections** in UnFake, then
+   use copied text, a screenshot crop, or saved screenshot input. The `/demo` page
+   remains an optional offline development fixture.
 
 The backend binds only to the local machine. API documentation is at `/docs`; health is
 available at `/` and `/api/v1/health`.
@@ -50,7 +56,7 @@ Edit `backend/.env` locally. Keep keys out of chat, Git, and the extension:
 ```dotenv
 TAVILY_API_KEY=your_tavily_key
 GEMINI_API_KEY=your_gemini_key
-LLM_MODEL=gemini-3.5-flash
+LLM_MODEL=gemini-3.5-flash-lite
 EMBEDDING_PROVIDER=gemini
 ```
 
@@ -71,8 +77,34 @@ Local embeddings do not supply a local evaluator: semantic verdicts still use Ge
 Without indexed vectors, keyword/exact archive search remains available and the interface
 discloses the limitation. No automatic model download or paid call occurs with empty keys.
 
-Provider integrations have mocked-response coverage. A live end-to-end provider run needs
-valid keys and is not claimed by the offline development checks.
+Live API check on November 19, 2026: `POST /api/v1/verify` for
+"The Philippines has 7,641 islands." returned `supported` using Gemini and five
+live-search sources in 16.079 seconds. The older configured Flash model timed out;
+the default is now `gemini-3.5-flash-lite`. Model explanations exclude inline source
+markers; the backend appends IDs from the citation list, and then validates every ID,
+quote, and verdict/stance relationship. Failed or invalid assessments still return
+insufficient evidence. This smoke check does not establish general accuracy or the
+six-second research target. The provider timeout is 20 seconds and the overall
+verification deadline remains 25 seconds.
+
+`/demo` now also contains a direct text-checking form using the same production API.
+It displays the assessment, provider warnings, and original source links without needing
+the extension. The extension is still required for capture on other webpages.
+
+From `backend`, diagnose the actual provider connections without printing credentials:
+
+```powershell
+& ..\.venv\Scripts\python.exe -m scripts.check_providers
+# Check only evaluation, optionally testing another model without editing .env:
+& ..\.venv\Scripts\python.exe -m scripts.check_providers --provider evaluation --model gemini-3.5-flash-lite
+```
+
+The diagnostic sends a synthetic model fixture and/or a public search query to the
+configured providers, using normal API quotas. It does not run automatically at startup.
+Health reports configuration and the selected evaluation model, not an active provider
+connectivity guarantee. The HTTP dependency includes SOCKS transport support for proxy
+environments. The browser demo was syntax-checked; a real browser launch was unavailable
+in the restricted execution environment for this update.
 
 Official references: [Gemini generation](https://ai.google.dev/api/generate-content),
 [Gemini embeddings](https://ai.google.dev/api/embeddings),
@@ -109,7 +141,7 @@ Backend tests isolate databases and disable real providers. For browser testing:
 ```powershell
 npm install
 npx playwright install chromium
-# Start the backend on port 8000 in another terminal.
+# Start the backend on port 8001 in another terminal.
 npm run test:browser
 ```
 
@@ -144,7 +176,7 @@ Confidence calibration needs independently labeled claims separate from final ev
 
 ```powershell
 python -m scripts.collect_predictions CALIBRATION.jsonl --output data/predictions.jsonl
-python -m scripts.calibrate data/predictions.jsonl --model gemini:gemini-3.5-flash --output data/calibration.json
+python -m scripts.calibrate data/predictions.jsonl --model gemini:gemini-3.5-flash-lite --output data/calibration.json
 ```
 
 The calibration dataset must use `split: "calibration"` and gold `expected_verdict` labels.
@@ -158,8 +190,9 @@ measurements. Predeclare the analysis. No participant results or significance ar
 
 ## Remaining work requiring configuration or research data
 
-- Validate the live provider path with valid keys and the optional local embedding path
-  with downloaded weights. Default mode is exact/keyword archive retrieval.
+- Check the optional local embedding path with downloaded weights. Current local archive
+  retrieval is exact/keyword. Repeat representative live cases and real-browser checks;
+  the successful API smoke test is not a full end-to-end browser evaluation.
 - Expand the fact-check corpus, prepare held-out labels, collect calibration data, run
   OCR studies and the participant comparison. Measurement tools do not replace experiments.
 - For large corpora, replace Python's full vector scan with an indexed search strategy.

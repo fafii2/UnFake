@@ -55,10 +55,10 @@ Edit `.env` and update `ALLOWED_ORIGINS` with your extension's ID (see below).
 ### 5. Start the server
 
 ```bash
-uvicorn main:app --reload --port 8000
+uvicorn main:app --reload --port 8001
 ```
 
-Visit `http://localhost:8000/docs` for the interactive API docs (Swagger UI).
+Visit `http://127.0.0.1:8001/docs` for the interactive API docs (Swagger UI).
 
 ### 6. Run tests
 
@@ -104,8 +104,8 @@ Restart the backend server.
 
 ### "Backend unreachable" in the popup
 
-- Is the backend running? (`uvicorn main:app --reload --port 8000`)
-- Is it running on port 8000?
+- Is the backend running? (`uvicorn main:app --reload --port 8001`)
+- Is it running on port 8001?
 
 ### Context menu doesn't appear
 

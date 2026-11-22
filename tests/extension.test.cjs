@@ -17,7 +17,7 @@ function setup() {
       captureVisibleTab:async()=>{events.push({action:'captured'});return 'data:image/png;base64,AA==';}},
     scripting:{insertCSS:async()=>{},executeScript:async()=>{}},
   };
-  const context = vm.createContext({chrome, crypto, performance, AbortSignal, console:{log(){},warn(){},error(){}},
+  const context = vm.createContext({chrome, crypto, performance, AbortSignal, setTimeout, console:{log(){},warn(){},error(){}},
     fetch:async()=>({ok:true,json:async()=>({status:'completed',verdict:'insufficient_evidence'})})});
   context.importScripts = (...names) => names.forEach(name => vm.runInContext(source(path.posix.normalize('background/'+name)), context));
   vm.runInContext(source('background/service-worker.js'), context);
@@ -40,6 +40,22 @@ test('client triage rejects opinions without any backend request', async()=>{
   const result = await run('callVerifyAPI("In my opinion, adobo is the best dish.","text")');
   assert.equal(result.status,'triage_rejected');
   assert.equal(result.evaluation_method,'client_triage');
+});
+
+test('live verification polls short requests until a sourced result is ready', async()=>{
+  const {context,run}=setup();
+  context.setTimeout=resolve=>resolve();
+  const id='a'.repeat(32);
+  const calls=[];
+  context.fetch=async(url,options)=>{
+    calls.push({url,options});
+    return {ok:true,json:async()=>calls.length===1 ? {id,status:'pending'} :
+      {id,status:'completed',result:{status:'completed',verdict:'supported',evidence:[{id:'S1'}]}}};
+  };
+  const result=await run('callVerifyAPI("The population of the Philippines was 112 million in 2024.","text")');
+  assert.equal(result.verdict,'supported');
+  assert.equal(calls.length,2);
+  assert.ok(calls[1].url.endsWith('/'+id));
 });
 
 test('popup request retains initiating tab across backend delay', async()=>{
@@ -75,6 +91,20 @@ test('capture rejects a changed active tab',async()=>{
   const result=await run('handleCropCompleted({},{id:11,windowId:1})');
   assert.equal(result.success,false);
   assert.ok(!events.some(e=>e.action==='captured'));
+});
+
+test('uploaded screenshots run local OCR and deliver editable text to the initiating tab',async()=>{
+  const {events,run}=setup();
+  const result=await run('handleUploadedScreenshot({imageUrl:"data:image/png;base64,AA==",tabId:22},{})');
+  assert.equal(result.success,true);
+  assert.deepEqual(events.map(e=>[e.id,e.action]),[[22,'show_ocr_loading'],[22,'show_ocr_review']]);
+  assert.equal(events[1].data.text,'OCR text');
+});
+
+test('invalid screenshot data is rejected before OCR or page changes',async()=>{
+  const {events,run}=setup();
+  await assert.rejects(run('handleUploadedScreenshot({imageUrl:"https://example.test/image.png",tabId:11},{})'),/PNG, JPEG, or WebP/);
+  assert.equal(events.length,0);
 });
 
 test('content helpers can be injected twice',()=>{

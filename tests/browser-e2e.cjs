@@ -1,4 +1,4 @@
-/** Real Chromium MV3 smoke test. No keys or external services required. */
+/** Isolated Chromium MV3 smoke test against a running local backend. */
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -24,7 +24,7 @@ const claim = 'The BSP stores 400,000 tons of Tallano gold owned by Ferdinand Ma
     const errors=[];
     worker.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
     const page = await context.newPage();
-    const demoOrigin = 'http://localhost:8000';
+    const demoOrigin = 'http://127.0.0.1:8001';
     await page.goto(demoOrigin + '/demo');
     const tabId = await worker.evaluate(async origin => {
       const tabs=await chrome.tabs.query({});
@@ -92,13 +92,23 @@ const claim = 'The BSP stores 400,000 tons of Tallano gold owned by Ferdinand Ma
     await page.locator('.unfake-verdict-badge').filter({hasText:'Contradicted'}).waitFor();
     console.log('PASS: reviewed OCR text -> verification result');
 
+    await page.locator('#unfake-close').click();
+    const imageUrl='data:image/png;base64,'+fs.readFileSync(path.join(artifacts,'ocr-review.png')).toString('base64');
+    const uploadResult=await worker.evaluate(async ({tabId,imageUrl})=>handleUploadedScreenshot({tabId,imageUrl},{}),{tabId,imageUrl});
+    assert.equal(uploadResult.success,true);
+    await page.locator('#unfake-ocr-input').waitFor();
+    assert.match(await page.locator('#unfake-ocr-input').inputValue(),/Tallano/i);
+    console.log('PASS: saved PNG -> local OCR -> review on initiating webpage');
+
     const popup=await context.newPage();
     await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
     await popup.locator('#statusText').filter({hasText:'Backend online'}).waitFor();
-    await popup.locator('#exampleBtn').click();
+    await popup.locator('#manualClaim').fill(claim);
     assert.equal(await popup.locator('#manualClaim').inputValue(),claim);
     await popup.screenshot({path:path.join(artifacts,'extension-popup.png')});
-    console.log('PASS: actual extension popup health check and archived example');
+    assert.equal(await popup.locator('#screenshotFile').count(),1);
+    assert.equal(await popup.locator('#checkLiveBtn').count(),1);
+    console.log('PASS: popup health, pasted claim, screenshot upload, and live-check controls');
     if(errors.length) console.log('Worker errors:',JSON.stringify(errors));
     console.log('BROWSER CHECKS PASSED');
   } finally {

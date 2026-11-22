@@ -2,7 +2,7 @@
 UnFake Backend — FastAPI Application Entry Point
 
 Start the server:
-    uvicorn main:app --reload --port 8000
+    uvicorn main:app --reload --port 8001
 """
 
 from fastapi import FastAPI, Request, HTTPException
@@ -17,7 +17,7 @@ from api.router import router as api_router
 app = FastAPI(
     title="UnFake API",
     description="AI-assisted misinformation verification backend",
-    version="0.4.0",
+    version="0.4.1",
 )
 
 # CORS middleware — allows the browser extension to reach the backend.
@@ -66,7 +66,7 @@ async def unexpected_error(request: Request, exc: Exception):
 @app.get("/")
 async def root():
     """Health check endpoint."""
-    return {"service": "unfake-api", "version": "0.4.0", "status": "running"}
+    return {"service": "unfake-api", "version": "0.4.1", "status": "running"}
 
 
 @app.get('/demo', include_in_schema=False)
